@@ -32,7 +32,7 @@ services:
   wiremock:
     image: wiremock/wiremock:3.9.1
     container_name: itau-wiremock
-    command: ["--verbose", "--port", "8081", "--root-dir", "/home/wiremock"]
+    command: ["--verbose", "--port", "8081", "--root-dir", "/home/wiremock", "--global-response-templating"]
     ports:
       - "8081:8081"
     volumes:
