@@ -1,0 +1,15 @@
+{
+  "request": { "method": "GET", "urlPathPattern": "/frauds/.*", "queryParameters": { "c": { "equalTo": "NO_INFO" } } },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "orderId": "{{request.path.[1]}}",
+      "customerId": "44444444-4444-4444-4444-444444444444",
+      "analyzedAt": "{{now}}",
+      "classification": "NO_INFO",
+      "occurrences": []
+    },
+    "transformers": ["response-template"],
+    "headers": { "Content-Type": "application/json" }
+  }
+}

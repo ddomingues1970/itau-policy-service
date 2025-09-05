@@ -1,0 +1,15 @@
+{
+  "request": { "method": "GET", "urlPathPattern": "/frauds/.*", "queryParameters": { "c": { "equalTo": "PREFERENTIAL" } } },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "orderId": "{{request.path.[1]}}",
+      "customerId": "33333333-3333-3333-3333-333333333333",
+      "analyzedAt": "{{now}}",
+      "classification": "PREFERENTIAL",
+      "occurrences": []
+    },
+    "transformers": ["response-template"],
+    "headers": { "Content-Type": "application/json" }
+  }
+}
