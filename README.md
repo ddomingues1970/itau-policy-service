@@ -3,6 +3,7 @@
 Microsserviço para gerenciar o ciclo de vida de solicitações de apólice, orientado a eventos.
 
 ## Stack
+
 - Java 17, Spring Boot 3.3
 - PostgreSQL 16 (Docker)
 - RabbitMQ 3-management (Docker)
@@ -10,6 +11,7 @@ Microsserviço para gerenciar o ciclo de vida de solicitações de apólice, ori
 - Maven, Testcontainers, Actuator
 
 ## Como subir a infraestrutura
+
 ```bash
 docker compose up -d
 # Postgres: localhost:5432 (itau/itau, db: policydb)

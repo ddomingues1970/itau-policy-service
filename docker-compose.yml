@@ -12,7 +12,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U itau -d policydb"]
+      test: [ "CMD-SHELL", "pg_isready -U itau -d policydb" ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -24,7 +24,7 @@ services:
       - "5672:5672"
       - "15672:15672" # UI http://localhost:15672 guest/guest
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -32,13 +32,13 @@ services:
   wiremock:
     image: wiremock/wiremock:3.9.1
     container_name: itau-wiremock
-    command: ["--verbose", "--port", "8081", "--root-dir", "/home/wiremock", "--global-response-templating"]
+    command: [ "--verbose", "--port", "8081", "--root-dir", "/home/wiremock", "--global-response-templating" ]
     ports:
       - "8081:8081"
     volumes:
       - ./infra/wiremock:/home/wiremock:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/__admin | grep -q mappings"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8081/__admin | grep -q mappings" ]
       interval: 5s
       timeout: 3s
       retries: 20

@@ -1,5 +1,13 @@
 {
-  "request": { "method": "GET", "urlPathPattern": "/frauds/.*", "queryParameters": { "c": { "equalTo": "HIGH_RISK" } } },
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/frauds/.*",
+    "queryParameters": {
+      "c": {
+        "equalTo": "HIGH_RISK"
+      }
+    }
+  },
   "response": {
     "status": 200,
     "jsonBody": {
@@ -8,10 +16,21 @@
       "analyzedAt": "{{now}}",
       "classification": "HIGH_RISK",
       "occurrences": [
-        { "id":"occ-1","productId":123,"type":"FRAUD","description":"Attempted Fraudulent transaction","createdAt":"2024-05-10T12:00:00Z","updatedAt":"2024-05-10T12:00:00Z" }
+        {
+          "id": "occ-1",
+          "productId": 123,
+          "type": "FRAUD",
+          "description": "Attempted Fraudulent transaction",
+          "createdAt": "2024-05-10T12:00:00Z",
+          "updatedAt": "2024-05-10T12:00:00Z"
+        }
       ]
     },
-    "transformers": ["response-template"],
-    "headers": { "Content-Type": "application/json" }
+    "transformers": [
+      "response-template"
+    ],
+    "headers": {
+      "Content-Type": "application/json"
+    }
   }
 }

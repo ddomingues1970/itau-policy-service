@@ -1,5 +1,13 @@
 {
-  "request": { "method": "GET", "urlPathPattern": "/frauds/.*", "queryParameters": { "c": { "equalTo": "REGULAR" } } },
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/frauds/.*",
+    "queryParameters": {
+      "c": {
+        "equalTo": "REGULAR"
+      }
+    }
+  },
   "response": {
     "status": 200,
     "jsonBody": {
@@ -9,7 +17,11 @@
       "classification": "REGULAR",
       "occurrences": []
     },
-    "transformers": ["response-template"],
-    "headers": { "Content-Type": "application/json" }
+    "transformers": [
+      "response-template"
+    ],
+    "headers": {
+      "Content-Type": "application/json"
+    }
   }
 }
