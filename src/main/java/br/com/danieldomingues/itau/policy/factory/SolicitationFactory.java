@@ -13,25 +13,40 @@ import org.springframework.stereotype.Component;
 public class SolicitationFactory {
 
   public static Solicitation from(CreateSolicitationRequest request) {
-    return Solicitation.builder()
-        .id(UUID.randomUUID())
-        .customerId(request.getCustomerId())
-        .productId(request.getProductId())
-        .insuredAmount(request.getInsuredAmount())
-        .totalMonthlyPremiumAmount(request.getTotalMonthlyPremiumAmount())
-        .createdAt(OffsetDateTime.now())
-        .status(Status.RECEIVED) // estado inicial conforme planejamento
-        .build();
+    Solicitation s =
+        Solicitation.builder()
+            .id(UUID.randomUUID())
+            .customerId(request.getCustomerId())
+            .productId(request.getProductId())
+            .category(request.getCategory())
+            .salesChannel(request.getSalesChannel())
+            .paymentMethod(request.getPaymentMethod())
+            .insuredAmount(request.getInsuredAmount())
+            .totalMonthlyPremiumAmount(request.getTotalMonthlyPremiumAmount())
+            .build();
+
+    // Coleções defensivas
+    if (request.getCoverages() != null) {
+      s.getCoverages().putAll(request.getCoverages());
+    }
+    if (request.getAssistances() != null) {
+      s.getAssistances().addAll(request.getAssistances());
+    }
+
+    // Defaults de criação
+    OffsetDateTime now = OffsetDateTime.now();
+    s.setCreatedAt(now);
+    s.setStatus(Status.RECEIVED);
+    s.addHistory(Status.RECEIVED, now);
+
+    return s;
   }
 
   /**
-   * Cria uma nova solicitação já com os valores iniciais padronizados:
-   * - status: RECEIVED
-   * - createdAt: agora
-   * - histórico com entrada RECEIVED
+   * Cria uma nova solicitação já com os valores iniciais padronizados.
    */
   public Solicitation newSolicitation(
-      java.util.UUID customerId,
+      UUID customerId,
       String productId,
       Category category,
       String salesChannel,
@@ -40,7 +55,8 @@ public class SolicitationFactory {
       java.math.BigDecimal insuredAmount,
       Map<String, java.math.BigDecimal> coverages,
       java.util.List<String> assistances) {
-    var s =
+
+    Solicitation s =
         Solicitation.builder()
             .customerId(customerId)
             .productId(productId)
@@ -51,7 +67,6 @@ public class SolicitationFactory {
             .insuredAmount(insuredAmount)
             .build();
 
-    // Coleções defensivas (evita NPE e preserva ordem)
     if (coverages != null) {
       s.getCoverages().putAll(coverages);
     }
@@ -59,9 +74,8 @@ public class SolicitationFactory {
       s.getAssistances().addAll(assistances);
     }
 
-    // Defaults de criação
-    s.setStatus(Status.RECEIVED);
     OffsetDateTime now = OffsetDateTime.now();
+    s.setStatus(Status.RECEIVED);
     s.setCreatedAt(now);
     s.addHistory(Status.RECEIVED, now);
 

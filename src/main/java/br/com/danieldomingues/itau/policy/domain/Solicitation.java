@@ -85,6 +85,19 @@ public class Solicitation {
 
   @PrePersist
   void prePersist() {
-    if (createdAt == null) createdAt = OffsetDateTime.now();
+    if (createdAt == null) {
+      createdAt = OffsetDateTime.now();
+    }
+    if (status == null) {
+      status = Status.RECEIVED;
+    }
+    if (history == null) {
+      history = new ArrayList<>();
+    }
+    // registra RECEIVED no histórico se ainda não houver
+    boolean hasReceived = history.stream().anyMatch(h -> h.getStatus() == Status.RECEIVED);
+    if (!hasReceived) {
+      addHistory(Status.RECEIVED, createdAt != null ? createdAt : OffsetDateTime.now());
+    }
   }
 }

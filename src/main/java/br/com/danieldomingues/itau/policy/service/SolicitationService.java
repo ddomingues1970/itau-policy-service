@@ -7,6 +7,9 @@ import br.com.danieldomingues.itau.policy.factory.SolicitationFactory;
 import br.com.danieldomingues.itau.policy.repo.SolicitationRepository;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,5 +39,15 @@ public class SolicitationService {
 
     // Persiste e retorna a entidade gerenciada
     return repository.save(entity);
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Solicitation> getWithHistoryById(UUID id) {
+    return repository.findWithHistoryById(id);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Solicitation> findByCustomerId(UUID customerId) {
+    return repository.findByCustomerId(customerId);
   }
 }
