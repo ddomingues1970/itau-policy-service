@@ -11,17 +11,11 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping(value = "/solicitacoes")
+@RequestMapping(value = "/solicitations")
 @RequiredArgsConstructor
 public class SolicitationController {
 
@@ -30,6 +24,7 @@ public class SolicitationController {
   @PostMapping(consumes = "application/json", produces = "application/json")
   public ResponseEntity<CreateSolicitationResponse> create(
       @Valid @RequestBody CreateSolicitationRequest req) {
+
     Solicitation saved = service.create(req);
 
     URI location =
@@ -42,21 +37,24 @@ public class SolicitationController {
         .body(new CreateSolicitationResponse(saved.getId(), saved.getCreatedAt()));
   }
 
-  @GetMapping("/solicitations/{id}")
-  public ResponseEntity<SolicitationResponse> getById(@PathVariable UUID id) {
+  @GetMapping(value = "/{id}", produces = "application/json")
+  public ResponseEntity<SolicitationResponse> getById(@PathVariable("id") UUID id) {
     return service
         .getWithHistoryById(id)
-        .map(SolicitationResponse::fromEntity) // conversão para DTO
+        .map(SolicitationResponse::fromEntity)
         .map(ResponseEntity::ok)
         .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
-  @GetMapping("/solicitations")
-  public ResponseEntity<List<SolicitationResponse>> listByCustomer(@RequestParam UUID customerId) {
+  @GetMapping(produces = "application/json")
+  public ResponseEntity<List<SolicitationResponse>> listByCustomer(
+      @RequestParam(value = "customerId") UUID customerId) {
+
     List<SolicitationResponse> list =
         service.findByCustomerId(customerId).stream()
             .map(SolicitationResponse::fromEntity)
             .toList();
+
     return ResponseEntity.ok(list);
   }
 }
