@@ -3,8 +3,6 @@ package br.com.danieldomingues.itau.policy.factory;
 import br.com.danieldomingues.itau.policy.api.dto.CreateSolicitationRequest;
 import br.com.danieldomingues.itau.policy.domain.Category;
 import br.com.danieldomingues.itau.policy.domain.Solicitation;
-import br.com.danieldomingues.itau.policy.domain.Status;
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -13,9 +11,10 @@ import org.springframework.stereotype.Component;
 public class SolicitationFactory {
 
   public static Solicitation from(CreateSolicitationRequest request) {
+    // Delega status/createdAt/history para @PrePersist em Solicitation
     Solicitation s =
         Solicitation.builder()
-            .id(UUID.randomUUID())
+            // NÃO definir id aqui: JPA gera
             .customerId(request.getCustomerId())
             .productId(request.getProductId())
             .category(request.getCategory())
@@ -25,7 +24,7 @@ public class SolicitationFactory {
             .totalMonthlyPremiumAmount(request.getTotalMonthlyPremiumAmount())
             .build();
 
-    // Coleções defensivas
+    // Copia defensiva das coleções
     if (request.getCoverages() != null) {
       s.getCoverages().putAll(request.getCoverages());
     }
@@ -33,17 +32,12 @@ public class SolicitationFactory {
       s.getAssistances().addAll(request.getAssistances());
     }
 
-    // Defaults de criação
-    OffsetDateTime now = OffsetDateTime.now();
-    s.setCreatedAt(now);
-    s.setStatus(Status.RECEIVED);
-    s.addHistory(Status.RECEIVED, now);
-
+    // Não setar createdAt/status/history aqui — entidade cuida no @PrePersist
     return s;
   }
 
   /**
-   * Cria uma nova solicitação já com os valores iniciais padronizados.
+   * Fábrica alternativa (mesma regra: @PrePersist define estado inicial).
    */
   public Solicitation newSolicitation(
       UUID customerId,
@@ -67,18 +61,10 @@ public class SolicitationFactory {
             .insuredAmount(insuredAmount)
             .build();
 
-    if (coverages != null) {
-      s.getCoverages().putAll(coverages);
-    }
-    if (assistances != null) {
-      s.getAssistances().addAll(assistances);
-    }
+    if (coverages != null) s.getCoverages().putAll(coverages);
+    if (assistances != null) s.getAssistances().addAll(assistances);
 
-    OffsetDateTime now = OffsetDateTime.now();
-    s.setStatus(Status.RECEIVED);
-    s.setCreatedAt(now);
-    s.addHistory(Status.RECEIVED, now);
-
+    // Sem createdAt/status/history — @PrePersist cuida disso
     return s;
   }
 }

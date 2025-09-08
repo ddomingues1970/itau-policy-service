@@ -25,7 +25,7 @@ public class SolicitationResponse {
 
   UUID id;
   UUID customerId;
-  Long productId;
+  String productId; // <- ALTERADO: era Long
   String category;
   String salesChannel;
   String paymentMethod;
@@ -45,7 +45,7 @@ public class SolicitationResponse {
     return SolicitationResponse.builder()
         .id(e.getId())
         .customerId(e.getCustomerId())
-        .productId(toLong(e.getProductId()))
+        .productId(e.getProductId()) // <- sem conversão para Long
         .category(toCategoryString(e.getCategory()))
         .salesChannel(e.getSalesChannel())
         .paymentMethod(e.getPaymentMethod())
@@ -69,13 +69,6 @@ public class SolicitationResponse {
     if (category == null) return null;
     if (category instanceof Enum<?> en) return en.name();
     return category.toString();
-  }
-
-  private static Long toLong(Object v) {
-    if (v == null) return null;
-    if (v instanceof Number n) return n.longValue();
-    if (v instanceof String s && !s.isBlank()) return Long.parseLong(s);
-    throw new IllegalArgumentException("productId inválido: " + v);
   }
 
   private static LocalDateTime toLocalDateTime(Object t) {
