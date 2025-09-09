@@ -1,0 +1,177 @@
+{
+  "info": {
+    "_postman_id": "53a03d91-4ac7-4080-8066-b02fe9464f9f",
+    "name": "itau-policy-service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "customerId", "value": "adc56d77-348c-4bf0-908f-22d402ee715c" },
+    { "key": "productId", "value": "1b2da7cc-b367-4196-8a78-9cfeec21f587" },
+    { "key": "solicitationId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Actuator Health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["actuator", "health"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "try {",
+              "  const body = pm.response.json();",
+              "  pm.test(\"UP\", function () { pm.expect(body.status).to.eql('UP'); });",
+              "} catch(e) { /* ignore if actuator not enabled */ }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Criar Solicitação",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"productId\": \"{{productId}}\",\n  \"category\": \"AUTO\",\n  \"salesChannel\": \"MOBILE\",\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"totalMonthlyPremiumAmount\": 75.25,\n  \"insuredAmount\": 275000.50,\n  \"coverages\": {\n    \"Roubo\": 100000.25,\n    \"Perda Total\": 100000.25,\n    \"Colisao com Terceiros\": 75000.00\n  },\n  \"assistances\": [\n    \"Guincho até 250km\",\n    \"Troca de Óleo\",\n    \"Chaveiro 24h\"\n  ]\n}\n"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/solicitations",
+          "host": ["{{baseUrl}}"],
+          "path": ["solicitations"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 201\", function () { pm.response.to.have.status(201); });",
+              "const body = pm.response.json();",
+              "pm.test(\"tem id\", function(){ pm.expect(body.id).to.be.a('string').and.not.empty; });",
+              "// guarda o id para encadear as próximas requisições",
+              "pm.collectionVariables.set('solicitationId', body.id);",
+              "// também garante customerId na collection (caso não esteja)",
+              "try {",
+              "  const reqBody = JSON.parse(pm.request.body.raw);",
+              "  if (reqBody.customerId) pm.collectionVariables.set('customerId', reqBody.customerId);",
+              "} catch(e) {}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consultar Solicitação",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "url": {
+          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["solicitations", "{{solicitationId}}"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test(\"id bate\", function(){ pm.expect(body.id).to.eql(pm.collectionVariables.get('solicitationId')); });",
+              "pm.test(\"status RECEIVED\", function(){ pm.expect(body.status).to.eql('RECEIVED'); });",
+              "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEIVED'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consultar Solicitação por cliente",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "url": {
+          "raw": "{{baseUrl}}/solicitations?customerId={{customerId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["solicitations"],
+          "query": [{ "key": "customerId", "value": "{{customerId}}" }]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "const arr = pm.response.json();",
+              "pm.test(\"lista contém a recém-criada\", function(){",
+              "  const id = pm.collectionVariables.get('solicitationId');",
+              "  pm.expect(arr.some(x => x.id === id)).to.eql(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validar Solicitação (Fraud Check)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "url": {
+          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}/validate",
+          "host": ["{{baseUrl}}"],
+          "path": ["solicitations", "{{solicitationId}}", "validate"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test(\"status é VALIDATED ou REJECTED\", function () {",
+              "  pm.expect(['VALIDATED','REJECTED']).to.include(body.status);",
+              "});",
+              "pm.test(\"history encadeado\", function () {",
+              "  pm.expect(body.history.length).to.be.above(1);",
+              "  pm.expect(body.history[0].status).to.eql('RECEIVED');",
+              "  pm.expect(body.history[body.history.length-1].status).to.eql(body.status);",
+              "});",
+              "pm.test(\"finishedAt coerente\", function () {",
+              "  if (body.status === 'REJECTED') {",
+              "    pm.expect(body.finishedAt).to.not.eql(null);",
+              "  } else {",
+              "    pm.expect(body.finishedAt).to.eql(null);",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
