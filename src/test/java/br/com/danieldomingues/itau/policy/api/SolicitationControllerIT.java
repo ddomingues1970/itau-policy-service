@@ -50,26 +50,26 @@ class SolicitationControllerIT {
 
     String requestJson =
         """
-        {
-          "customerId": "%s",
-          "productId": "%s",
-          "category": "AUTO",
-          "salesChannel": "MOBILE",
-          "paymentMethod": "CREDIT_CARD",
-          "totalMonthlyPremiumAmount": 75.25,
-          "insuredAmount": 275000.50,
-          "coverages": {
-            "Roubo": 100000.25,
-            "Perda Total": 100000.25,
-            "Colisao com Terceiros": 75000.00
-          },
-          "assistances": [
-            "Guincho até 250km",
-            "Troca de Óleo",
-            "Chaveiro 24h"
-          ]
-        }
-        """
+                {
+                  "customerId": "%s",
+                  "productId": "%s",
+                  "category": "AUTO",
+                  "salesChannel": "MOBILE",
+                  "paymentMethod": "CREDIT_CARD",
+                  "totalMonthlyPremiumAmount": 75.25,
+                  "insuredAmount": 275000.50,
+                  "coverages": {
+                    "Roubo": 100000.25,
+                    "Perda Total": 100000.25,
+                    "Colisao com Terceiros": 75000.00
+                  },
+                  "assistances": [
+                    "Guincho até 250km",
+                    "Troca de Óleo",
+                    "Chaveiro 24h"
+                  ]
+                }
+                """
             .formatted(CUSTOMER_ID, PRODUCT_ID);
 
     mockMvc
@@ -79,6 +79,30 @@ class SolicitationControllerIT {
         .andExpect(header().string("Location", endsWith("/solicitations/" + generatedId)))
         .andExpect(jsonPath("$.id", is(generatedId.toString())))
         .andExpect(jsonPath("$.createdAt", notNullValue()));
+  }
+
+  @Test
+  @DisplayName("POST /solicitations -> 400 quando payload inválido (falta customerId)")
+  void create_shouldReturn400_whenPayloadInvalid() throws Exception {
+    String invalidJson =
+        """
+                {
+                  "productId": "%s",
+                  "category": "AUTO",
+                  "salesChannel": "MOBILE",
+                  "paymentMethod": "CREDIT_CARD",
+                  "totalMonthlyPremiumAmount": 75.25,
+                  "insuredAmount": 275000.50
+                }
+                """
+            .formatted(PRODUCT_ID);
+
+    mockMvc
+        .perform(
+            post("/solicitations").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", is(400)))
+        .andExpect(jsonPath("$.error", notNullValue()));
   }
 
   @Test
