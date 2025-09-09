@@ -1,7 +1,6 @@
 package br.com.danieldomingues.itau.policy.api;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -22,10 +21,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = SolicitationValidationController.class)
+@Import(ApiExceptionHandler.class)
 @AutoConfigureMockMvc
 class SolicitationValidationControllerIT {
 
@@ -109,5 +110,31 @@ class SolicitationValidationControllerIT {
         .andExpect(jsonPath("$.finishedAt", notNullValue()))
         .andExpect(jsonPath("$.history[0].status", is("RECEIVED")))
         .andExpect(jsonPath("$.history[1].status", is("REJECTED")));
+  }
+
+  @Test
+  @DisplayName("POST /solicitations/{id}/validate -> 404 quando não encontrado")
+  void validate_shouldReturn404_whenNotFound() throws Exception {
+    when(fraudValidationService.validate(ArgumentMatchers.eq(ID)))
+        .thenThrow(new IllegalArgumentException("Solicitation not found"));
+
+    mockMvc
+        .perform(post("/solicitations/{id}/validate", ID).contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.status", is(404)))
+        .andExpect(jsonPath("$.error", notNullValue()));
+  }
+
+  @Test
+  @DisplayName("POST /solicitations/{id}/validate -> 400 quando estado inválido")
+  void validate_shouldReturn400_whenInvalidState() throws Exception {
+    when(fraudValidationService.validate(ArgumentMatchers.eq(ID)))
+        .thenThrow(new IllegalStateException("Invalid state"));
+
+    mockMvc
+        .perform(post("/solicitations/{id}/validate", ID).contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", is(400)))
+        .andExpect(jsonPath("$.error", notNullValue()));
   }
 }
