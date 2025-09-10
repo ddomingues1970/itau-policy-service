@@ -12,6 +12,7 @@ import br.com.danieldomingues.itau.policy.factory.SolicitationFactory;
 import br.com.danieldomingues.itau.policy.integration.fraud.FraudClient;
 import br.com.danieldomingues.itau.policy.integration.fraud.dto.FraudCheckRequest;
 import br.com.danieldomingues.itau.policy.integration.fraud.dto.FraudCheckResponse;
+import br.com.danieldomingues.itau.policy.messaging.PolicyEventPublisher;
 import br.com.danieldomingues.itau.policy.repo.SolicitationRepository;
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -25,6 +26,7 @@ class FraudValidationServiceRulesTest {
 
   private SolicitationRepository repository;
   private FraudClient fraudClient;
+  private PolicyEventPublisher eventPublisher; // novo
   private FraudValidationService service;
   private SolicitationFactory factory;
 
@@ -32,7 +34,8 @@ class FraudValidationServiceRulesTest {
   void setUp() {
     repository = mock(SolicitationRepository.class);
     fraudClient = mock(FraudClient.class);
-    service = new FraudValidationService(repository, fraudClient);
+    eventPublisher = mock(PolicyEventPublisher.class); // novo
+    service = new FraudValidationService(repository, fraudClient, eventPublisher); // 3 args
     factory = new SolicitationFactory();
   }
 
@@ -67,6 +70,11 @@ class FraudValidationServiceRulesTest {
     verify(repository).save(captor.capture());
 
     assertThat(captor.getValue().getStatus()).isEqualTo(Status.VALIDATED);
+    // opcional: verificar publicação
+    verify(eventPublisher, times(1))
+        .publishSolicitationValidated(
+            eq(sol.getId().toString()), eq(sol.getCustomerId().toString()), any());
+    verify(eventPublisher, never()).publishSolicitationRejected(any(), any(), any());
   }
 
   @Test
@@ -82,6 +90,10 @@ class FraudValidationServiceRulesTest {
     verify(repository).save(captor.capture());
 
     assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJECTED);
+    verify(eventPublisher, times(1))
+        .publishSolicitationRejected(
+            eq(sol.getId().toString()), eq(sol.getCustomerId().toString()), any());
+    verify(eventPublisher, never()).publishSolicitationValidated(any(), any(), any());
   }
 
   @Test
@@ -139,6 +151,7 @@ class FraudValidationServiceRulesTest {
 
     verify(repository, never()).save(any());
     assertThat(result.getStatus()).isEqualTo(Status.VALIDATED);
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -150,6 +163,8 @@ class FraudValidationServiceRulesTest {
     assertThatThrownBy(() -> service.validate(sol.getId()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Invalid state");
+
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
