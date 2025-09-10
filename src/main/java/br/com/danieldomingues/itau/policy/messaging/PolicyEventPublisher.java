@@ -1,47 +1,53 @@
 package br.com.danieldomingues.itau.policy.messaging;
 
-import br.com.danieldomingues.itau.policy.config.PolicyEventsConfig;
-import java.time.OffsetDateTime;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class PolicyEventPublisher {
 
   private final RabbitTemplate rabbitTemplate;
-
-  public PolicyEventPublisher(RabbitTemplate rabbitTemplate) {
-    this.rabbitTemplate = rabbitTemplate;
-    // Garantir uso do Jackson2JsonMessageConverter se registrado no contexto
-    // (Spring Boot autoconfig faz isso quando o bean existe)
-  }
+  private final TopicExchange policyExchange;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public void publishSolicitationValidated(
-      String solicitationId, String customerId, String classification) {
-    Objects.requireNonNull(solicitationId, "solicitationId is required");
-    Map<String, Object> payload =
-        Map.of(
-            "type", "SolicitationValidatedEvent",
-            "solicitationId", solicitationId,
-            "customerId", customerId,
-            "classification", classification,
-            "occurredAt", OffsetDateTime.now().toString());
-    rabbitTemplate.convertAndSend(
-        PolicyEventsConfig.EXCHANGE_POLICY_LIFECYCLE, PolicyEventsConfig.RK_VALIDATED, payload);
+      String solicitationId, String customerId, String reason) {
+    publishEvent("solicitation.validated", solicitationId, customerId, reason);
   }
 
   public void publishSolicitationRejected(String solicitationId, String customerId, String reason) {
-    Objects.requireNonNull(solicitationId, "solicitationId is required");
-    Map<String, Object> payload =
-        Map.of(
-            "type", "SolicitationRejectedEvent",
-            "solicitationId", solicitationId,
-            "customerId", customerId,
-            "reason", reason,
-            "occurredAt", OffsetDateTime.now().toString());
-    rabbitTemplate.convertAndSend(
-        PolicyEventsConfig.EXCHANGE_POLICY_LIFECYCLE, PolicyEventsConfig.RK_REJECTED, payload);
+    publishEvent("solicitation.rejected", solicitationId, customerId, reason);
+  }
+
+  public void publishSolicitationApproved(String solicitationId, String customerId, String reason) {
+    publishEvent("solicitation.approved", solicitationId, customerId, reason);
+  }
+
+  public void publishSolicitationCancelled(
+      String solicitationId, String customerId, String reason) {
+    publishEvent("solicitation.cancelled", solicitationId, customerId, reason);
+  }
+
+  private void publishEvent(
+      String routingKey, String solicitationId, String customerId, String reason) {
+    try {
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("solicitationId", solicitationId);
+      payload.put("customerId", customerId);
+      payload.put("reason", reason);
+
+      rabbitTemplate.convertAndSend(policyExchange.getName(), routingKey, payload);
+      log.info("Published event {} for solicitation {}", routingKey, solicitationId);
+    } catch (Exception e) {
+      log.error("Failed to publish event {} for solicitation {}", routingKey, solicitationId, e);
+    }
   }
 }
