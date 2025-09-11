@@ -3,97 +3,88 @@
 Microsserviço para gerenciar o ciclo de vida de solicitações de apólice, orientado a eventos.
 
 ## Stack
-
 - Java 17, Spring Boot 3.3
 - PostgreSQL 16 (Docker)
 - RabbitMQ 3-management (Docker)
 - WireMock 3 (Docker) — mock da API de Fraudes
 - Maven, Testcontainers, Actuator
-- JaCoCo (cobertura)
-- Postman (coleção de testes)
+- JaCoCo (coverage)
+- Postman (coleção)
 
-## Como subir a infraestrutura
-
+## Infra (Docker)
 ```bash
 docker compose up -d
 ```
+Serviços:
+- **Postgres**: `localhost:5432` (itau/itau, db: `policydb`)
+- **RabbitMQ UI**: http://localhost:15672 (guest/guest)
+- **WireMock**: http://localhost:8081/__admin
 
-Serviços disponíveis:
-- **Postgres**: `localhost:5432` (user: `itau` / pwd: `itau`, db: `policydb`)
-- **RabbitMQ UI**: [http://localhost:15672](http://localhost:15672) (guest/guest)
-- **WireMock**: [http://localhost:8081/__admin](http://localhost:8081/__admin)
-
-## Como rodar a aplicação (local)
-
+## Executar a aplicação
 ```bash
 mvn spring-boot:run
 ```
-
-Health check:
+Health:
 ```bash
 curl -s http://localhost:8080/actuator/health
 ```
 
-## Como rodar a aplicação (via Docker Compose, incluindo app)
-
+## Build com app via Compose
 ```bash
 mvn clean package -DskipTests
 docker compose up -d --build
 ```
 
-A aplicação sobe junto com Postgres, RabbitMQ e WireMock.
+## API
+- **POST** `/solicitations` — cria solicitação
+- **GET** `/solicitations/{id}` — consulta por ID
+- **GET** `/solicitations?customerId={uuid}` — lista por cliente
+- **POST** `/solicitations/{id}/validate` — valida fraude (WireMock)
+- **DELETE** `/solicitations/{id}` — **cancela** a solicitação  
+  Regras:
+  - `APPROVED`/`REJECTED` → **400** (terminal)
+  - inexistente → **404**
+  - idempotente em `CANCELLED` → **204**
 
-## Testes e cobertura
+## Observabilidade
+- Actuator expõe: `/actuator/health`, `/actuator/info`, `/actuator/metrics`
+- Logs estruturados (logfmt) no console:
+  ```
+  ts=2025-09-11T18:20:01-03:00 level=INFO logger=b.c.d.i.p... thread=main msg="Started ..."
+  ```
 
-Rodar todos os testes + gerar relatório de cobertura:
-
+## Testes & cobertura
 ```bash
 mvn clean verify
+# Relatório: target/site/jacoco/index.html
 ```
+Gate: **linhas ≥ 80%**, **branches ≥ 70%** (UT + IT).
 
-Abrir relatório JaCoCo:
-```
-target/site/jacoco/index.html
-```
+## Postman
+Coleção: `src/main/resources/itau-policy-service.postman_collection.json`  
+Fluxo:
+1. Health
+2. Criar
+3. Consultar por ID
+4. Consultar por cliente
+5. Validar
+6. **Cancelar**
 
-Thresholds configurados: linhas ≥ 80%, branches ≥ 70%.
+Variáveis: `baseUrl`, `solicitationId`, `customerId`, `productId`.
 
-## Eventos no RabbitMQ
-
+## Eventos (RabbitMQ)
 - Exchange: `policy.lifecycle` (topic)
-- Eventos publicados:
-  - `SolicitationValidatedEvent`
-  - `SolicitationRejectedEvent`
+- Eventos publicados: `SolicitationValidatedEvent`, `SolicitationRejectedEvent`  
+(Consumo será expandido em etapas futuras.)
 
-Para inspecionar eventos publicados, acesse o RabbitMQ Management UI → Filas → Mensagens.
+## Decisões & trade-offs
+- EDA com RabbitMQ para desacoplamento e evolução incremental.
+- Mock de fraudes com WireMock (`POST /fraud/check`) para testes determinísticos.
+- **JaCoCo gate** para garantir qualidade mínima contínua.
+- Log fmt simples sem dependências extras para facilitar parsing local e CI.
 
-## Postman (fluxo end-to-end)
-
-A coleção está em: `src/main/resources/itau-policy-service.postman_collection.json`
-
-Fluxo suportado:
-1. Criar solicitação (`POST /solicitations`)
-2. Consultar por ID (`GET /solicitations/{id}`)
-3. Consultar por cliente (`GET /solicitations?customerId=...`)
-4. Validar fraude (`POST /solicitations/{id}/validate`)
-
-Variáveis no Postman:
-- `baseUrl` (ex: `http://localhost:8080`)
-- `solicitationId` (definido no create e usado nos próximos passos)
-
-## Decisões de arquitetura
-
-- Arquitetura orientada a eventos (EDA) com RabbitMQ
-- Microsserviço focado em ciclo de vida de solicitações
-- Eventos desacoplados para integração futura (pagamento, subscrição)
-- API de Fraudes mockada com WireMock (`POST /fraud/check`)
-- Estados principais:
-  - RECEIVED → VALIDATED/REJECTED
-  - PENDING → APPROVED/REJECTED/CANCELLED
-
-## Próximos passos
-
-- Implementar consumidores para eventos de pagamento/subscrição
-- Expandir transições de estado (PENDING → APPROVED/REJECTED)
-- Ajustar README com exemplos de consumo de eventos
-- Smoke tests ponta a ponta via Docker Compose
+## Troubleshooting
+- **WireMock 404**: verifique `infra/wiremock/mappings/*.json` e a porta **8081** no Compose.
+- **RabbitMQ indisponível**: confira `docker compose ps` e credenciais.
+- **DB schema**: em `dev/test`, `ddl-auto=update`; em produção use migrações (Flyway/Liquibase).
+- **Coverage ausente**: certifique-se do POM com `prepare-agent` (UT/IT) e execute `mvn clean verify`.

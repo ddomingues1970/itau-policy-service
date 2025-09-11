@@ -24,20 +24,16 @@ public class SolicitationService {
 
   @Transactional
   public Solicitation create(CreateSolicitationRequest req) {
-    // Momento de criação em UTC (consistente para logs/testes)
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
-    // Constrói a entidade a partir do DTO
     Solicitation entity = SolicitationFactory.from(req);
 
-    // Garante os metadados iniciais
     if (entity.getCreatedAt() == null) {
       entity.setCreatedAt(now);
     }
     entity.setStatus(Status.RECEIVED);
     entity.addHistory(Status.RECEIVED, now);
 
-    // Persiste e retorna a entidade gerenciada
     return repository.save(entity);
   }
 
@@ -49,5 +45,39 @@ public class SolicitationService {
   @Transactional(readOnly = true)
   public List<Solicitation> findByCustomerId(UUID customerId) {
     return repository.findByCustomerId(customerId);
+  }
+
+  /**
+   * Cancela a solicitação, respeitando as regras:
+   * - Não permite cancelar se status for APPROVED ou REJECTED (terminais).
+   * - Idempotente se já estiver CANCELLED.
+   * - Ao cancelar, define finishedAt e registra histórico.
+   *
+   * Exceções:
+   * - IllegalArgumentException -> 404 (não encontrada)
+   * - IllegalStateException -> 400 (violação de regra)
+   */
+  @Transactional
+  public void cancel(UUID id) {
+    Solicitation s =
+        repository
+            .findWithHistoryById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Solicitation not found: " + id));
+
+    Status current = s.getStatus();
+    if (current == Status.APPROVED || current == Status.REJECTED) {
+      throw new IllegalStateException(
+          "Cannot cancel a solicitation with terminal status: " + current);
+    }
+    if (current == Status.CANCELLED) {
+      return; // idempotente
+    }
+
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    s.setStatus(Status.CANCELLED);
+    s.setFinishedAt(now);
+    s.addHistory(Status.CANCELLED, now);
+
+    repository.save(s);
   }
 }

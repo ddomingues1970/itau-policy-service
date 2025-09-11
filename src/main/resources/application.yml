@@ -34,3 +34,16 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+  info:
+    java:
+      enabled: true
+
+# Logs estruturados (logfmt/JSON-like) no console, sem libs extras
+logging:
+  level:
+    root: INFO
+    br.com.danieldomingues.itau.policy: INFO
+  pattern:
+    console: >
+      {"ts":"%d{ISO_OFFSET_DATE_TIME}","level":"%p","logger":"%logger{36}","thread":"%thread",
+      "msg":"%escapeJson{%m}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}"}%n

@@ -16,8 +16,6 @@
         <java.version>17</java.version>
         <spring.boot.version>3.3.3</spring.boot.version>
         <testcontainers.version>1.20.1</testcontainers.version>
-
-        <!-- NOVO -->
         <jacoco.version>0.8.12</jacoco.version>
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <maven.failsafe.version>3.2.5</maven.failsafe.version>
@@ -117,7 +115,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Compiler: AJUSTE para Java 17 -->
+            <!-- Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -129,7 +127,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Spotless (existente) -->
+            <!-- Spotless -->
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
@@ -160,59 +158,79 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <goals>
-                            <goal>apply</goal>
-                        </goals>
+                        <goals><goal>apply</goal></goals>
                         <phase>compile</phase>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- dentro do plugin org.jacoco:jacoco-maven-plugin -->
+            <!-- JaCoCo -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
-
+                <version>${jacoco.version}</version>
                 <executions>
+                    <!-- UT agent -->
                     <execution>
-                        <id>prepare-agent</id>
+                        <id>prepare-agent-ut</id>
+                        <phase>initialize</phase>
                         <goals><goal>prepare-agent</goal></goals>
+                        <configuration>
+                            <propertyName>jacoco.ut.argLine</propertyName>
+                            <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
+                        </configuration>
                     </execution>
 
+                    <!-- IT agent -->
+                    <execution>
+                        <id>prepare-agent-it</id>
+                        <phase>pre-integration-test</phase>
+                        <goals><goal>prepare-agent-integration</goal></goals>
+                        <configuration>
+                            <propertyName>jacoco.it.argLine</propertyName>
+                            <destFile>${project.build.directory}/jacoco-it.exec</destFile>
+                        </configuration>
+                    </execution>
+
+                    <!-- HTML/XML report merging UT+IT -->
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
                         <goals><goal>report</goal></goals>
-                        <!-- opcional: replicar excludes no report, se quiser que o HTML reflita o mesmo escopo -->
                         <configuration>
+                            <dataFile>${project.build.directory}/jacoco-ut.exec</dataFile>
+                            <dataFiles>
+                                <dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
+                            </dataFiles>
                             <excludes>
-                                **/PolicyServiceApplication.*
-                                **/api/dto/**
-                                **/integration/fraud/dto/**
-                                **/domain/Status.*
-                                **/domain/Category.*
-                                **/repo/**      <!-- interfaces do Spring Data -->
-                                **/api/**       <!-- controllers e exception handler -->
-                                **/integration/fraud/HttpFraudClient.*
+                                <exclude>**/PolicyServiceApplication.*</exclude>
+                                <exclude>**/api/dto/**</exclude>
+                                <exclude>**/integration/fraud/dto/**</exclude>
+                                <exclude>**/domain/Status.*</exclude>
+                                <exclude>**/domain/Category.*</exclude>
+                                <exclude>**/repo/**</exclude>
+                                <exclude>**/api/**</exclude>
+                                <exclude>**/integration/fraud/HttpFraudClient.*</exclude>
                             </excludes>
                         </configuration>
                     </execution>
 
+                    <!-- Coverage gate -->
                     <execution>
                         <id>check</id>
+                        <phase>verify</phase>
                         <goals><goal>check</goal></goals>
                         <configuration>
+                            <dataFile>${project.build.directory}/jacoco-ut.exec</dataFile>
                             <excludes>
-                                <!-- Sem lógica de negócio: tirar do denominador do gate -->
-                                **/PolicyServiceApplication.*
-                                **/api/dto/**
-                                **/integration/fraud/dto/**
-                                **/domain/Status.*
-                                **/domain/Category.*
-                                **/repo/**      <!-- interfaces típicas não geram branches -->
-                                **/api/**       <!-- controllers e handler (branches artificiais de MVC) -->
-                                **/integration/fraud/HttpFraudClient.* <!-- cliente HTTP (infra) -->
+                                <exclude>**/PolicyServiceApplication.*</exclude>
+                                <exclude>**/api/dto/**</exclude>
+                                <exclude>**/integration/fraud/dto/**</exclude>
+                                <exclude>**/domain/Status.*</exclude>
+                                <exclude>**/domain/Category.*</exclude>
+                                <exclude>**/repo/**</exclude>
+                                <exclude>**/api/**</exclude>
+                                <exclude>**/integration/fraud/HttpFraudClient.*</exclude>
                             </excludes>
                             <rules>
                                 <rule>
@@ -236,24 +254,21 @@
                 </executions>
             </plugin>
 
-
-            <!-- NOVO: Surefire (UNIT tests) -->
+            <!-- UNIT tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.version}</version>
                 <configuration>
-                    <!-- inclui apenas testes unitários (exclui *IT.java) -->
                     <excludes>
                         <exclude>**/*IT.java</exclude>
                     </excludes>
-                    <!-- injeta argLine do JaCoCo -->
-                    <argLine>${jacoco-agent.argLine}</argLine>
+                    <argLine>${jacoco.ut.argLine}</argLine>
                     <useSystemClassLoader>true</useSystemClassLoader>
                 </configuration>
             </plugin>
 
-            <!-- NOVO: Failsafe (INTEGRATION tests *IT.java) -->
+            <!-- INTEGRATION tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -262,7 +277,7 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
-                    <argLine>${jacoco-agent.argLine}</argLine>
+                    <argLine>${jacoco.it.argLine}</argLine>
                 </configuration>
                 <executions>
                     <execution>
@@ -273,7 +288,6 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 </project>
