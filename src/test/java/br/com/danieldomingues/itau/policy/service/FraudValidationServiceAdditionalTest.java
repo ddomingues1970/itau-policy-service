@@ -89,13 +89,13 @@ class FraudValidationServiceAdditionalTest {
 
   @Test
   void highRisk_shouldReject_setFinishedAt_andAppendHistory() {
-    Solicitation s = newSolicitation(Category.RESIDENTIAL, 200_000);
+    Solicitation s = newSolicitation(Category.HOME, 200_000);
 
     when(repository.findById(s.getId())).thenReturn(Optional.of(s));
     when(fraudClient.check(any(FraudCheckRequest.class)))
         .thenReturn(FraudCheckResponse.builder().classification("HIGH_RISK").build());
 
-    Solicitation saved = newSolicitation(Category.RESIDENTIAL, 200_000);
+    Solicitation saved = newSolicitation(Category.HOME, 200_000);
     saved.setId(s.getId()); // simula retorno do save com o mesmo id
     saved.setStatus(Status.REJECTED);
     saved.setFinishedAt(OffsetDateTime.now());

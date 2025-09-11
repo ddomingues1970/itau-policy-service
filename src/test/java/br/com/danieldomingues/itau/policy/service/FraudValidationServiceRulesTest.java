@@ -86,7 +86,7 @@ class FraudValidationServiceRulesTest {
 
   @Test
   void preferentialClient_shouldValidate() {
-    Solicitation sol = newSolicitation(Category.RESIDENTIAL, 300_000);
+    Solicitation sol = newSolicitation(Category.HOME, 300_000);
     when(repository.findById(sol.getId())).thenReturn(Optional.of(sol));
     when(fraudClient.check(any(FraudCheckRequest.class)))
         .thenReturn(FraudCheckResponse.builder().classification("PREFERENTIAL").build());
@@ -167,7 +167,7 @@ class FraudValidationServiceRulesTest {
 
   @Test
   void nullClassification_shouldDefaultToNoInfoAndReject() {
-    Solicitation sol = newSolicitation(Category.RESIDENTIAL, 150_000);
+    Solicitation sol = newSolicitation(Category.HOME, 150_000);
     when(repository.findById(sol.getId())).thenReturn(Optional.of(sol));
     // classification == null
     when(fraudClient.check(any(FraudCheckRequest.class)))

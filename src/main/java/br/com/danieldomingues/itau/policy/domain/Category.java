@@ -3,7 +3,7 @@ package br.com.danieldomingues.itau.policy.domain;
 public enum Category {
   AUTO,
   LIFE,
-  RESIDENTIAL,
+  HOME,
   CORPORATE,
   OTHER
 }

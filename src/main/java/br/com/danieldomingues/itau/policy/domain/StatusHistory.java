@@ -3,9 +3,13 @@ package br.com.danieldomingues.itau.policy.domain;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "status_history")
+@AllArgsConstructor
+@NoArgsConstructor
 public class StatusHistory {
   @Id @GeneratedValue private UUID id;
 

@@ -1,99 +1,63 @@
 package br.com.danieldomingues.itau.policy.api.dto;
 
+import br.com.danieldomingues.itau.policy.domain.Category;
 import br.com.danieldomingues.itau.policy.domain.Solicitation;
 import br.com.danieldomingues.itau.policy.domain.Status;
-import br.com.danieldomingues.itau.policy.domain.StatusHistory;
 import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Value;
+import org.hibernate.Hibernate;
 
-/**
- * DTO de resposta para Solicitation, usado nas consultas da API.
- * Responsabilidade: expor dados necessários ao cliente de forma segura.
- */
 @Value
 @Builder
 public class SolicitationResponse {
 
   UUID id;
   UUID customerId;
-  String productId; // <- ALTERADO: era Long
-  String category;
-  String salesChannel;
-  String paymentMethod;
-  BigDecimal totalMonthlyPremiumAmount;
-  BigDecimal insuredAmount;
+  String productId;
+  Category category;
+  String salesChannel; // <-- novo
+  String paymentMethod; // <-- opcional, mas útil para consistência
+  BigDecimal totalMonthlyPremiumAmount; // <-- opcional, mantém precisão
+  BigDecimal insuredAmount; // <-- opcional, mantém precisão
+  Status status;
+  OffsetDateTime createdAt;
+  OffsetDateTime finishedAt;
+
   Map<String, BigDecimal> coverages;
   List<String> assistances;
-  Status status;
-  LocalDateTime createdAt;
-  LocalDateTime finishedAt;
   List<StatusHistoryResponse> history;
 
-  /**
-   * Constrói um DTO a partir da entidade de domínio.
-   */
   public static SolicitationResponse fromEntity(Solicitation e) {
     return SolicitationResponse.builder()
         .id(e.getId())
         .customerId(e.getCustomerId())
-        .productId(e.getProductId()) // <- sem conversão para Long
-        .category(toCategoryString(e.getCategory()))
-        .salesChannel(e.getSalesChannel())
-        .paymentMethod(e.getPaymentMethod())
-        .totalMonthlyPremiumAmount(e.getTotalMonthlyPremiumAmount())
-        .insuredAmount(e.getInsuredAmount())
-        .coverages(e.getCoverages() == null ? Map.of() : Map.copyOf(e.getCoverages()))
-        .assistances(e.getAssistances() == null ? List.of() : List.copyOf(e.getAssistances()))
+        .productId(e.getProductId())
+        .category(e.getCategory())
+        .salesChannel(e.getSalesChannel()) // <-- mapeado
+        .paymentMethod(e.getPaymentMethod()) // <-- mapeado
+        .totalMonthlyPremiumAmount(e.getTotalMonthlyPremiumAmount()) // <-- mapeado
+        .insuredAmount(e.getInsuredAmount()) // <-- mapeado
         .status(e.getStatus())
-        .createdAt(toLocalDateTime(e.getCreatedAt()))
-        .finishedAt(toLocalDateTime(e.getFinishedAt()))
+        .createdAt(e.getCreatedAt())
+        .finishedAt(e.getFinishedAt())
+        // Defensive: só copia se a coleção estiver inicializada; senão, responde vazio
+        .coverages(
+            e.getCoverages() == null || !Hibernate.isInitialized(e.getCoverages())
+                ? Map.<String, BigDecimal>of()
+                : Map.copyOf(e.getCoverages()))
+        .assistances(
+            e.getAssistances() == null || !Hibernate.isInitialized(e.getAssistances())
+                ? List.<String>of()
+                : List.copyOf(e.getAssistances()))
         .history(
-            e.getHistory() == null
-                ? List.of()
+            e.getHistory() == null || !Hibernate.isInitialized(e.getHistory())
+                ? List.<StatusHistoryResponse>of()
                 : e.getHistory().stream().map(StatusHistoryResponse::fromEntity).toList())
         .build();
-  }
-
-  // --- helpers privados ---
-
-  private static String toCategoryString(Object category) {
-    if (category == null) return null;
-    if (category instanceof Enum<?> en) return en.name();
-    return category.toString();
-  }
-
-  private static LocalDateTime toLocalDateTime(Object t) {
-    if (t == null) return null;
-    if (t instanceof LocalDateTime ldt) return ldt;
-    if (t instanceof OffsetDateTime odt) return odt.toLocalDateTime();
-    if (t instanceof Instant i) return LocalDateTime.ofInstant(i, ZoneId.systemDefault());
-    if (t instanceof Timestamp ts) return ts.toLocalDateTime();
-    throw new IllegalArgumentException("Tipo de data não suportado: " + t.getClass());
-  }
-
-  /**
-   * DTO interno para histórico de status.
-   */
-  @Value
-  @Builder
-  public static class StatusHistoryResponse {
-    Status status;
-    LocalDateTime timestamp;
-
-    public static StatusHistoryResponse fromEntity(StatusHistory entity) {
-      return StatusHistoryResponse.builder()
-          .status(entity.getStatus())
-          .timestamp(toLocalDateTime(entity.getTimestamp()))
-          .build();
-    }
   }
 }

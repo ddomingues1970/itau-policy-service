@@ -37,30 +37,51 @@ public class SolicitationService {
     return repository.save(entity);
   }
 
+  /**
+   * Consulta por ID inicializando coleções LAZY (sem múltiplos fetches de "bag").
+   * Mantém a chamada a findWithHistoryById para compatibilidade com testes existentes.
+   */
   @Transactional(readOnly = true)
   public Optional<Solicitation> getWithHistoryById(UUID id) {
-    return repository.findWithHistoryById(id);
-  }
-
-  @Transactional(readOnly = true)
-  public List<Solicitation> findByCustomerId(UUID customerId) {
-    return repository.findByCustomerId(customerId);
+    return repository
+        .findWithHistoryById(id)
+        .map(
+            s -> {
+              // Inicializa coleções LAZY ainda dentro da sessão/tx:
+              if (s.getHistory() != null) s.getHistory().size();
+              if (s.getAssistances() != null) s.getAssistances().size();
+              if (s.getCoverages() != null) s.getCoverages().size();
+              return s;
+            });
   }
 
   /**
-   * Cancela a solicitação, respeitando as regras:
-   * - Não permite cancelar se status for APPROVED ou REJECTED (terminais).
-   * - Idempotente se já estiver CANCELLED.
+   * Lista por customerId inicializando coleções necessárias para o DTO,
+   * evitando LazyInitializationException no mapeamento no controller.
+   */
+  @Transactional(readOnly = true)
+  public List<Solicitation> findByCustomerId(UUID customerId) {
+    List<Solicitation> list = repository.findByCustomerId(customerId);
+    for (Solicitation s : list) {
+      if (s.getHistory() != null) s.getHistory().size();
+      if (s.getAssistances() != null) s.getAssistances().size();
+      if (s.getCoverages() != null) s.getCoverages().size();
+    }
+    return list;
+  }
+
+  /**
+   * Cancela a solicitação com regras:
+   * - Não permite cancelar APPROVED/REJECTED (terminais) -> IllegalStateException (400).
+   * - Idempotente para CANCELLED.
    * - Ao cancelar, define finishedAt e registra histórico.
-   *
-   * Exceções:
-   * - IllegalArgumentException -> 404 (não encontrada)
-   * - IllegalStateException -> 400 (violação de regra)
+   * - Se não existir -> IllegalArgumentException (404 pelo ApiExceptionHandler).
    */
   @Transactional
   public void cancel(UUID id) {
     Solicitation s =
         repository
+            // Para cancelar, só precisamos do history; evita multiple-bag fetch
             .findWithHistoryById(id)
             .orElseThrow(() -> new IllegalArgumentException("Solicitation not found: " + id));
 
@@ -70,7 +91,7 @@ public class SolicitationService {
           "Cannot cancel a solicitation with terminal status: " + current);
     }
     if (current == Status.CANCELLED) {
-      return; // idempotente
+      return; // Idempotente
     }
 
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
