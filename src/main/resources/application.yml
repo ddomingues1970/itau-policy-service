@@ -14,6 +14,7 @@ spring:
     properties:
       hibernate.format_sql: true
       hibernate.jdbc.time_zone: UTC
+    open-in-view: false
   rabbitmq:
     host: localhost
     port: 5672
@@ -44,6 +45,6 @@ logging:
     root: INFO
     br.com.danieldomingues.itau.policy: INFO
   pattern:
-    console: >
-      {"ts":"%d{ISO_OFFSET_DATE_TIME}","level":"%p","logger":"%logger{36}","thread":"%thread",
-      "msg":"%escapeJson{%m}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}"}%n
+    console: >-
+      ts=%d{ISO_OFFSET_DATE_TIME} level=%p logger=%logger{36} thread=%thread msg="%m"
+      traceId=%X{traceId:-} spanId=%X{spanId:-}%n
