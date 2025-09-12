@@ -128,11 +128,11 @@ class SolicitationControllerIT {
         .andExpect(jsonPath("$.insuredAmount", is(275000.50)))
         .andExpect(jsonPath("$.coverages.Roubo", is(100000.25)))
         .andExpect(jsonPath("$.assistances", hasSize(3)))
-        .andExpect(jsonPath("$.status", is("RECEIVED")))
+        .andExpect(jsonPath("$.status", is("RECEBIDO")))
         .andExpect(jsonPath("$.createdAt", notNullValue()))
         .andExpect(jsonPath("$.finishedAt", nullValue()))
         .andExpect(jsonPath("$.history", hasSize(1)))
-        .andExpect(jsonPath("$.history[0].status", is("RECEIVED")));
+        .andExpect(jsonPath("$.history[0].status", is("RECEBIDO")));
   }
 
   @Test
@@ -187,9 +187,9 @@ class SolicitationControllerIT {
                 "Perda Total", new BigDecimal("100000.25"),
                 "Colisao com Terceiros", new BigDecimal("75000.00")));
     s.getAssistances().addAll(List.of("Guincho até 250km", "Troca de Óleo", "Chaveiro 24h"));
-    s.setStatus(Status.RECEIVED);
+    s.setStatus(Status.RECEBIDO);
     s.setCreatedAt(createdAt);
-    s.addHistory(Status.RECEIVED, createdAt);
+    s.addHistory(Status.RECEBIDO, createdAt);
     return s;
   }
 

@@ -4,136 +4,101 @@ Microsserviço para gerenciar o ciclo de vida de solicitações de apólice,
 orientado a eventos.
 
 ## Stack
+- Java 17, Spring Boot 3.3
+- PostgreSQL 16 (Docker)
+- RabbitMQ 3-management (Docker)
+- WireMock 3 (Docker) — mock da API de Fraudes
+- Maven, Testcontainers, Actuator
+- JaCoCo (coverage)
+- Postman (coleção)
 
--   Java 17, Spring Boot 3.3
--   PostgreSQL 16 (Docker)
--   RabbitMQ 3-management (Docker)
--   WireMock 3 (Docker) --- mock da API de Fraudes
--   Maven, Testcontainers, Actuator
--   JaCoCo (cobertura de testes)
--   Postman (coleção de testes)
-
-## Como subir a infraestrutura
-
-``` bash
+## Infra (Docker)
+```bash
 docker compose up -d
 ```
+Serviços:
+- **Postgres**: `localhost:5432` (itau/itau, db: `policydb`)
+- **RabbitMQ UI**: http://localhost:15672 (guest/guest)
+- **WireMock**: http://localhost:8081/__admin
 
-Serviços disponíveis: - **Postgres**: `localhost:5432` (user: `itau` /
-pwd: `itau`, db: `policydb`) - **RabbitMQ UI**: <http://localhost:15672>
-(guest/guest) - **WireMock**: <http://localhost:8081/__admin>
-
-## Como rodar a aplicação (local)
-
-``` bash
+## Executar a aplicação
+```bash
 mvn spring-boot:run
 ```
-
-Health check:
-
-``` bash
+Health:
+```bash
 curl -s http://localhost:8080/actuator/health
 ```
 
-## Como rodar a aplicação (via Docker Compose, incluindo app)
-
-``` bash
+## Build com app via Compose
+```bash
 mvn clean package -DskipTests
 docker compose up -d --build
 ```
 
-A aplicação sobe junto com Postgres, RabbitMQ e WireMock.
+## API
+- **POST** `/solicitations` — cria solicitação
+- **GET** `/solicitations/{id}` — consulta por ID
+- **GET** `/solicitations?customerId={uuid}` — lista por cliente
+- **POST** `/solicitations/{id}/validate` — valida fraude (WireMock)
+- **DELETE** `/solicitations/{id}` — **cancela** a solicitação  
+  Regras:
+  - `APROVADO`/`REJEITADO` → **400** (terminal)
+  - inexistente → **404**
+  - idempotente em `CANCELADO` → **204**
 
-## Testes e cobertura
+## Observabilidade
+- Actuator expõe: `/actuator/health`, `/actuator/info`, `/actuator/metrics`
+- Logs estruturados (logfmt) no console:
+  ```
+  ts=2025-09-11T18:20:01-03:00 level=INFO logger=b.c.d.i.p... thread=main msg="Started ..."
+  ```
+- **Tracing (Micrometer Tracing + Brave/Zipkin)**
+  - Dependência: `io.micrometer:micrometer-tracing-bridge-brave`
+  - Exportador Zipkin: `io.zipkin.reporter2:zipkin-reporter-brave`
+  - Ativar no `application.yml`:
+    ```yaml
+    management.tracing.sampling.probability: 1.0
+    management.zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans
+    ```
+  - Subir Zipkin com Docker:
+    ```bash
+    docker run -d -p 9411:9411 openzipkin/zipkin
+    ```
+  - Consultar traces: [http://localhost:9411](http://localhost:9411)
 
-Rodar todos os testes + gerar relatório de cobertura:
-
-``` bash
+## Testes & cobertura
+```bash
 mvn clean verify
+# Relatório: target/site/jacoco/index.html
 ```
+Gate: **linhas ≥ 80%**, **branches ≥ 70%** (UT + IT).
 
-Abrir relatório JaCoCo:
+## Postman
+Coleção: `src/main/resources/itau-policy-service.postman_collection.json`  
+Fluxo:
+1. Health
+2. Criar
+3. Consultar por ID
+4. Consultar por cliente
+5. Validar
+6. **Cancelar**
 
-    target/site/jacoco/index.html
+Variáveis: `baseUrl`, `solicitationId`, `customerId`, `productId`.
 
-Thresholds configurados: linhas ≥ 80%, branches ≥ 70%.
+## Eventos (RabbitMQ)
+- Exchange: `policy.lifecycle` (topic)
+- Eventos publicados: `SolicitationValidatedEvent`, `SolicitationRejectedEvent`  
+(Consumo será expandido em etapas futuras.)
 
-## Eventos no RabbitMQ
+## Decisões & trade-offs
+- EDA com RabbitMQ para desacoplamento e evolução incremental.
+- Mock de fraudes com WireMock (`POST /fraud/check`) para testes determinísticos.
+- **JaCoCo gate** para garantir qualidade mínima contínua.
+- Log fmt simples sem dependências extras para facilitar parsing local e CI.
 
--   Exchange: `policy.lifecycle` (topic)
--   Eventos publicados:
-    -   `SolicitationValidatedEvent`
-    -   `SolicitationRejectedEvent`
-    -   `SolicitationApprovedEvent`
-
-Exemplo inspeção via cURL:
-
-``` bash
-curl -u guest:guest http://localhost:15672/api/queues/%2f/validatedQueue/get -d'{"count":5,"requeue":true,"encoding":"auto"}'
-```
-
-Ou pela interface de gerenciamento (http://localhost:15672).
-
-## Postman (fluxo end-to-end)
-
-A coleção está em:
-`src/main/resources/itau-policy-service.postman_collection.json`
-
-Fluxo suportado: 1. Criar solicitação (`POST /solicitations`) 2.
-Consultar por ID (`GET /solicitations/{id}`) 3. Consultar por cliente
-(`GET /solicitations?customerId=...`) 4. Validar fraude
-(`POST /solicitations/{id}/validate`)
-
-Variáveis no Postman: - `baseUrl` (ex: `http://localhost:8080`) -
-`solicitationId` (definido no create e usado nos próximos passos)
-
-## Decisões de arquitetura
-
--   Arquitetura orientada a eventos (EDA) com RabbitMQ
--   Microsserviço focado no ciclo de vida de solicitações
--   Eventos desacoplados para integração futura (pagamento, subscrição,
-    notificação)
--   API de Fraudes mockada com WireMock (`POST /fraud/check`)
--   Estados principais:
-    -   RECEIVED → VALIDATED/REJECTED
-    -   VALIDATED → PENDING
-    -   PENDING → APPROVED/REJECTED/CANCELLED
-
-## Decisões técnicas / trade-offs
-
--   Durante desenvolvimento e testes:
-    `spring.jpa.hibernate.ddl-auto=create` para facilitar a criação do
-    schema.
--   **Produção**: usar **Flyway** ou **Liquibase** para versionamento
-    controlado.
--   Testes automatizados com cobertura mínima validada por JaCoCo
-    (linhas ≥ 80%, branches ≥ 70%).
--   Uso de **Testcontainers** para isolar dependências em testes de
-    integração.
-
-## Próximos passos
-
--   Implementar consumidores para eventos de pagamento/subscrição.
--   Expandir transições de estado (PENDING → APPROVED/REJECTED).
--   Implementar cancelamento com regras de bloqueio em estados
-    terminais.
--   Adicionar métricas e logs estruturados (Micrometer/Actuator).
--   Criar seção de troubleshooting no README.
-
-------------------------------------------------------------------------
-
-### Requisitos Atendidos até 09/09/2025
-
--   Persistência com JPA (Solicitação, Histórico, Cliente).
--   API REST: criar e consultar solicitações.
--   Integração com API de Fraudes (mock via WireMock).
--   Transição RECEIVED → VALIDATED/REJECTED com publicação de eventos.
--   Cobertura mínima de testes garantida com JaCoCo.
--   Docker Compose ponta a ponta (Postgres, RabbitMQ, WireMock, App).
-
-### Pontos Críticos já cumpridos
-
--   Arquitetura orientada a eventos implementada.
--   Testes com cobertura mínima atendida.
--   Documentação inicial no README.
--   Docker Compose ponta a ponta validado.
+## Troubleshooting
+- **WireMock 404**: verifique `infra/wiremock/mappings/*.json` e a porta **8081** no Compose.
+- **RabbitMQ indisponível**: confira `docker compose ps` e credenciais.
+- **DB schema**: em `dev/test`, `ddl-auto=update`; em produção use migrações (Flyway/Liquibase).
+- **Coverage ausente**: certifique-se do POM com `prepare-agent` (UT/IT) e execute `mvn clean verify`.

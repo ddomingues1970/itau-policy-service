@@ -43,5 +43,28 @@ services:
       timeout: 3s
       retries: 20
 
+  policy-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: itau-policy-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/policydb
+      SPRING_DATASOURCE_USERNAME: itau
+      SPRING_DATASOURCE_PASSWORD: itau
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      FRAUD_API_BASE_URL: http://wiremock:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      wiremock:
+        condition: service_healthy
+
 volumes:
   pgdata:

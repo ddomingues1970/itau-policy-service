@@ -24,30 +24,81 @@ public class SolicitationService {
 
   @Transactional
   public Solicitation create(CreateSolicitationRequest req) {
-    // Momento de criação em UTC (consistente para logs/testes)
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
-    // Constrói a entidade a partir do DTO
     Solicitation entity = SolicitationFactory.from(req);
 
-    // Garante os metadados iniciais
     if (entity.getCreatedAt() == null) {
       entity.setCreatedAt(now);
     }
-    entity.setStatus(Status.RECEIVED);
-    entity.addHistory(Status.RECEIVED, now);
+    entity.setStatus(Status.RECEBIDO);
+    entity.addHistory(Status.RECEBIDO, now);
 
-    // Persiste e retorna a entidade gerenciada
     return repository.save(entity);
   }
 
+  /**
+   * Consulta por ID inicializando coleções LAZY (sem múltiplos fetches de "bag").
+   * Mantém a chamada a findWithHistoryById para compatibilidade com testes existentes.
+   */
   @Transactional(readOnly = true)
   public Optional<Solicitation> getWithHistoryById(UUID id) {
-    return repository.findWithHistoryById(id);
+    return repository
+        .findWithHistoryById(id)
+        .map(
+            s -> {
+              // Inicializa coleções LAZY ainda dentro da sessão/tx:
+              if (s.getHistory() != null) s.getHistory().size();
+              if (s.getAssistances() != null) s.getAssistances().size();
+              if (s.getCoverages() != null) s.getCoverages().size();
+              return s;
+            });
   }
 
+  /**
+   * Lista por customerId inicializando coleções necessárias para o DTO,
+   * evitando LazyInitializationException no mapeamento no controller.
+   */
   @Transactional(readOnly = true)
   public List<Solicitation> findByCustomerId(UUID customerId) {
-    return repository.findByCustomerId(customerId);
+    List<Solicitation> list = repository.findByCustomerId(customerId);
+    for (Solicitation s : list) {
+      if (s.getHistory() != null) s.getHistory().size();
+      if (s.getAssistances() != null) s.getAssistances().size();
+      if (s.getCoverages() != null) s.getCoverages().size();
+    }
+    return list;
+  }
+
+  /**
+   * Cancela a solicitação com regras:
+   * - Não permite cancelar APROVADO/REJEITADO (terminais) -> IllegalStateException (400).
+   * - Idempotente para CANCELADA.
+   * - Ao cancelar, define finishedAt e registra histórico.
+   * - Se não existir -> IllegalArgumentException (404 pelo ApiExceptionHandler).
+   */
+  @Transactional
+  public void cancel(UUID id) {
+    Solicitation s =
+        repository
+            // Para cancelar, só precisamos do history; evita multiple-bag fetch
+            .findWithHistoryById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Solicitation not found: " + id));
+
+    Status current = s.getStatus();
+    if (current == Status.APROVADO || current == Status.REJEITADO) {
+      throw new IllegalStateException(
+          "Cannot cancel a solicitation with terminal status: " + current);
+    }
+    if (current == Status.CANCELADA) {
+      return; // Idempotente
+    }
+
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    s.setStatus(Status.CANCELADA);
+    s.setFinishedAt(now);
+    s.addHistory(Status.CANCELADA, now);
+
+    repository.save(s);
   }
 }

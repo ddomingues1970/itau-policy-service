@@ -61,19 +61,19 @@ class SolicitationValidationControllerIT {
     s.getAssistances().addAll(List.of("Guincho até 250km", "Troca de Óleo", "Chaveiro 24h"));
     OffsetDateTime created = OffsetDateTime.now();
     s.setCreatedAt(created);
-    s.setStatus(Status.RECEIVED);
-    s.addHistory(Status.RECEIVED, created);
+    s.setStatus(Status.RECEBIDO);
+    s.addHistory(Status.RECEBIDO, created);
     return s;
   }
 
   // -------- tests --------
 
   @Test
-  @DisplayName("POST /solicitations/{id}/validate -> 200 VALIDATED com histórico")
+  @DisplayName("POST /solicitations/{id}/validate -> 200 VALIDADO com histórico")
   void validate_shouldReturn200Validated() throws Exception {
     Solicitation validated = baseEntity();
-    validated.setStatus(Status.VALIDATED);
-    validated.addHistory(Status.VALIDATED, OffsetDateTime.now());
+    validated.setStatus(Status.VALIDADO);
+    validated.addHistory(Status.VALIDADO, OffsetDateTime.now());
 
     when(fraudValidationService.validate(ArgumentMatchers.eq(ID))).thenReturn(validated);
 
@@ -84,19 +84,19 @@ class SolicitationValidationControllerIT {
         .andExpect(jsonPath("$.id", is(ID.toString())))
         .andExpect(jsonPath("$.customerId", is(CUSTOMER_ID.toString())))
         .andExpect(jsonPath("$.productId", is(PRODUCT_ID)))
-        .andExpect(jsonPath("$.status", is("VALIDATED")))
+        .andExpect(jsonPath("$.status", is("VALIDADO")))
         .andExpect(jsonPath("$.finishedAt").value(org.hamcrest.Matchers.nullValue()))
-        .andExpect(jsonPath("$.history[0].status", is("RECEIVED")))
-        .andExpect(jsonPath("$.history[1].status", is("VALIDATED")));
+        .andExpect(jsonPath("$.history[0].status", is("RECEBIDO")))
+        .andExpect(jsonPath("$.history[1].status", is("VALIDADO")));
   }
 
   @Test
-  @DisplayName("POST /solicitations/{id}/validate -> 200 REJECTED com finishedAt")
+  @DisplayName("POST /solicitations/{id}/validate -> 200 REJEITADO com finishedAt")
   void validate_shouldReturn200Rejected() throws Exception {
     Solicitation rejected = baseEntity();
-    rejected.setStatus(Status.REJECTED);
+    rejected.setStatus(Status.REJEITADO);
     OffsetDateTime now = OffsetDateTime.now();
-    rejected.addHistory(Status.REJECTED, now);
+    rejected.addHistory(Status.REJEITADO, now);
     rejected.setFinishedAt(now);
 
     when(fraudValidationService.validate(ArgumentMatchers.eq(ID))).thenReturn(rejected);
@@ -106,10 +106,10 @@ class SolicitationValidationControllerIT {
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id", is(ID.toString())))
-        .andExpect(jsonPath("$.status", is("REJECTED")))
+        .andExpect(jsonPath("$.status", is("REJEITADO")))
         .andExpect(jsonPath("$.finishedAt", notNullValue()))
-        .andExpect(jsonPath("$.history[0].status", is("RECEIVED")))
-        .andExpect(jsonPath("$.history[1].status", is("REJECTED")));
+        .andExpect(jsonPath("$.history[0].status", is("RECEBIDO")))
+        .andExpect(jsonPath("$.history[1].status", is("REJEITADO")));
   }
 
   @Test

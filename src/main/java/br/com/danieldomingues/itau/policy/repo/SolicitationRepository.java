@@ -9,11 +9,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SolicitationRepository extends JpaRepository<Solicitation, UUID> {
 
-  // Carrega a coleção 'history' junto com a Solicitation (evita LazyInitializationException nos
-  // testes/serviço)
+  // Mantemos apenas o fetch do history para cenários que realmente precisem (ex.: cancelamento).
   @EntityGraph(attributePaths = "history")
   Optional<Solicitation> findWithHistoryById(UUID id);
 
-  // Útil para endpoint de busca por cliente
+  // Para listagem por cliente (sem forçar fetch de bags; service poderá inicializar o que precisar)
   List<Solicitation> findByCustomerId(UUID customerId);
 }

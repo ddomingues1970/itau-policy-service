@@ -15,6 +15,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Orquestra a validação de fraudes e realiza a transição de estado:
+ * RECEBIDO -> VALIDADO/REJEITADO, registrando histórico.
+ *
+ * Regras (Mock/WireMock):
+ *  - REGULAR/PREFERENTIAL  -> VALIDADO
+ *  - HIGH_RISK/NO_INFO     -> REJEITADO  (finaliza solicitação)
+ *
+ * Idempotente: se a solicitação já estiver VALIDADO/REJEITADO, não altera.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,15 +42,15 @@ public class FraudValidationService {
             .orElseThrow(
                 () -> new IllegalArgumentException("Solicitation not found: " + solicitationId));
 
-    // Idempotência
-    if (s.getStatus() == Status.VALIDATED || s.getStatus() == Status.REJECTED) {
+    // Idempotência: já processada
+    if (s.getStatus() == Status.VALIDADO || s.getStatus() == Status.REJEITADO) {
       log.info("Solicitation {} already processed with status {}", s.getId(), s.getStatus());
       return s;
     }
 
-    if (s.getStatus() != Status.RECEIVED) {
+    if (s.getStatus() != Status.RECEBIDO) {
       throw new IllegalStateException(
-          "Invalid state to validate: " + s.getStatus() + " (expected RECEIVED)");
+          "Invalid state to validate: " + s.getStatus() + " (expected RECEBIDO)");
     }
 
     FraudCheckRequest req =
@@ -58,22 +68,12 @@ public class FraudValidationService {
     OffsetDateTime now = OffsetDateTime.now();
     switch (classification) {
       case "REGULAR", "PREFERENTIAL" -> {
-        s.setStatus(Status.VALIDATED);
-        s.addHistory(Status.VALIDATED, now);
-        try {
-          eventPublisher.publishSolicitationValidated(
-              s.getId().toString(), s.getCustomerId().toString(), classification);
-        } catch (Exception e) {
-          log.warn(
-              "Failed to publish SolicitationValidatedEvent for {}: {}",
-              s.getId(),
-              e.getMessage(),
-              e);
-        }
+        s.setStatus(Status.VALIDADO);
+        s.addHistory(Status.VALIDADO, now);
       }
       case "HIGH_RISK", "NO_INFO" -> {
-        s.setStatus(Status.REJECTED);
-        s.addHistory(Status.REJECTED, now);
+        s.setStatus(Status.REJEITADO);
+        s.addHistory(Status.REJEITADO, now);
         s.setFinishedAt(now);
         try {
           eventPublisher.publishSolicitationRejected(
@@ -87,9 +87,9 @@ public class FraudValidationService {
         }
       }
       default -> {
-        log.warn("Unknown fraud classification '{}', defaulting to REJECTED", classification);
-        s.setStatus(Status.REJECTED);
-        s.addHistory(Status.REJECTED, now);
+        log.warn("Unknown fraud classification '{}', defaulting to REJEITADO", classification);
+        s.setStatus(Status.REJEITADO);
+        s.addHistory(Status.REJEITADO, now);
         s.setFinishedAt(now);
         try {
           eventPublisher.publishSolicitationRejected(

@@ -15,28 +15,19 @@
       "name": "Actuator Health",
       "request": {
         "method": "GET",
-        "url": {
-          "raw": "{{baseUrl}}/actuator/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["actuator", "health"]
-        }
+        "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] }
       },
       "response": [],
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-              "try {",
-              "  const body = pm.response.json();",
-              "  pm.test(\"UP\", function () { pm.expect(body.status).to.eql('UP'); });",
-              "} catch(e) { /* ignore if actuator not enabled */ }"
-            ],
-            "type": "text/javascript"
-          }
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+            "try { const body = pm.response.json(); pm.test(\"UP\", function () { pm.expect(body.status).to.eql('UP'); }); } catch(e) {}"
+          ]
         }
-      ]
+      }]
     },
     {
       "name": "Criar Solicitação",
@@ -47,61 +38,44 @@
           "mode": "raw",
           "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"productId\": \"{{productId}}\",\n  \"category\": \"AUTO\",\n  \"salesChannel\": \"MOBILE\",\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"totalMonthlyPremiumAmount\": 75.25,\n  \"insuredAmount\": 275000.50,\n  \"coverages\": {\n    \"Roubo\": 100000.25,\n    \"Perda Total\": 100000.25,\n    \"Colisao com Terceiros\": 75000.00\n  },\n  \"assistances\": [\n    \"Guincho até 250km\",\n    \"Troca de Óleo\",\n    \"Chaveiro 24h\"\n  ]\n}\n"
         },
-        "url": {
-          "raw": "{{baseUrl}}/solicitations",
-          "host": ["{{baseUrl}}"],
-          "path": ["solicitations"]
-        }
+        "url": { "raw": "{{baseUrl}}/solicitations", "host": ["{{baseUrl}}"], "path": ["solicitations"] }
       },
       "response": [],
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"status 201\", function () { pm.response.to.have.status(201); });",
-              "const body = pm.response.json();",
-              "pm.test(\"tem id\", function(){ pm.expect(body.id).to.be.a('string').and.not.empty; });",
-              "// guarda o id para encadear as próximas requisições",
-              "pm.collectionVariables.set('solicitationId', body.id);",
-              "// também garante customerId na collection (caso não esteja)",
-              "try {",
-              "  const reqBody = JSON.parse(pm.request.body.raw);",
-              "  if (reqBody.customerId) pm.collectionVariables.set('customerId', reqBody.customerId);",
-              "} catch(e) {}"
-            ],
-            "type": "text/javascript"
-          }
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"status 201\", function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test(\"tem id\", function(){ pm.expect(body.id).to.be.a('string').and.not.empty; });",
+            "pm.collectionVariables.set('solicitationId', body.id);",
+            "try { const reqBody = JSON.parse(pm.request.body.raw); if (reqBody.customerId) pm.collectionVariables.set('customerId', reqBody.customerId); } catch(e) {}"
+          ]
         }
-      ]
+      }]
     },
     {
       "name": "Consultar Solicitação",
       "request": {
         "method": "GET",
         "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
-        "url": {
-          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["solicitations", "{{solicitationId}}"]
-        }
+        "url": { "raw": "{{baseUrl}}/solicitations/{{solicitationId}}", "host": ["{{baseUrl}}"], "path": ["solicitations","{{solicitationId}}"] }
       },
       "response": [],
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-              "const body = pm.response.json();",
-              "pm.test(\"id bate\", function(){ pm.expect(body.id).to.eql(pm.collectionVariables.get('solicitationId')); });",
-              "pm.test(\"status RECEIVED\", function(){ pm.expect(body.status).to.eql('RECEIVED'); });",
-              "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEIVED'); });"
-            ],
-            "type": "text/javascript"
-          }
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test(\"id bate\", function(){ pm.expect(body.id).to.eql(pm.collectionVariables.get('solicitationId')); });",
+            "pm.test(\"status RECEBIDO\", function(){ pm.expect(body.status).to.eql('RECEBIDO'); });",
+            "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); });"
+          ]
         }
-      ]
+      }]
     },
     {
       "name": "Consultar Solicitação por cliente",
@@ -116,62 +90,70 @@
         }
       },
       "response": [],
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-              "const arr = pm.response.json();",
-              "pm.test(\"lista contém a recém-criada\", function(){",
-              "  const id = pm.collectionVariables.get('solicitationId');",
-              "  pm.expect(arr.some(x => x.id === id)).to.eql(true);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+            "const arr = pm.response.json();",
+            "pm.test(\"lista contém a recém-criada\", function(){",
+            "  const id = pm.collectionVariables.get('solicitationId');",
+            "  pm.expect(arr.some(x => x.id === id)).to.eql(true);",
+            "});"
+          ]
         }
-      ]
+      }]
     },
     {
       "name": "Validar Solicitação (Fraud Check)",
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
-        "url": {
-          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}/validate",
-          "host": ["{{baseUrl}}"],
-          "path": ["solicitations", "{{solicitationId}}", "validate"]
-        }
+        "url": { "raw": "{{baseUrl}}/solicitations/{{solicitationId}}/validate", "host": ["{{baseUrl}}"], "path": ["solicitations","{{solicitationId}}","validate"] }
       },
       "response": [],
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-              "const body = pm.response.json();",
-              "pm.test(\"status é VALIDATED ou REJECTED\", function () {",
-              "  pm.expect(['VALIDATED','REJECTED']).to.include(body.status);",
-              "});",
-              "pm.test(\"history encadeado\", function () {",
-              "  pm.expect(body.history.length).to.be.above(1);",
-              "  pm.expect(body.history[0].status).to.eql('RECEIVED');",
-              "  pm.expect(body.history[body.history.length-1].status).to.eql(body.status);",
-              "});",
-              "pm.test(\"finishedAt coerente\", function () {",
-              "  if (body.status === 'REJECTED') {",
-              "    pm.expect(body.finishedAt).to.not.eql(null);",
-              "  } else {",
-              "    pm.expect(body.finishedAt).to.eql(null);",
-              "  }",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test(\"status é VALIDADO ou REJEITADO\", function () { pm.expect(['VALIDADO','REJEITADO']).to.include(body.status); });",
+            "pm.test(\"history encadeado\", function () { pm.expect(body.history.length).to.be.above(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); pm.expect(body.history[body.history.length-1].status).to.eql(body.status); });",
+            "pm.test(\"finishedAt coerente\", function () { if (body.status === 'REJEITADO') { pm.expect(body.finishedAt).to.not.eql(null); } else { pm.expect(body.finishedAt).to.eql(null); } });"
+          ]
         }
-      ]
+      }]
+    },
+    {
+      "name": "Cancelar Solicitação",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{baseUrl}}/solicitations/{{solicitationId}}", "host": ["{{baseUrl}}"], "path": ["solicitations","{{solicitationId}}"] }
+      },
+      "response": [],
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });",
+            "// após cancelar, o GET deve retornar 200 com status CANCELADA OU 404 dependendo do design;",
+            "// aqui validaremos explicitamente o 200 + CANCELADA, ajustando quando houver mudança de regra.",
+            "pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/solicitations/' + pm.collectionVariables.get('solicitationId'), method: 'GET' }, function (err, res) {",
+            "  if (!err && res) {",
+            "    pm.test(\"consulta pós-cancelamento\", function(){ pm.expect([200,404]).to.include(res.code); });",
+            "    try {",
+            "      const b = res.json();",
+            "      if (res.code === 200) { pm.expect(b.status).to.eql('CANCELADA'); }",
+            "    } catch(e) {}",
+            "  }",
+            "});"
+          ]
+        }
+      }]
     }
   ]
 }

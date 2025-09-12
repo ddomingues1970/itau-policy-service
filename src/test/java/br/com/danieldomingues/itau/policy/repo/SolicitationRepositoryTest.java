@@ -55,7 +55,7 @@ class SolicitationRepositoryTest {
             .paymentMethod("CREDIT_CARD")
             .totalMonthlyPremiumAmount(BigDecimal.valueOf(100.0))
             .insuredAmount(BigDecimal.valueOf(50000.0))
-            .status(Status.RECEIVED)
+            .status(Status.RECEBIDO)
             .createdAt(OffsetDateTime.now())
             .build();
 

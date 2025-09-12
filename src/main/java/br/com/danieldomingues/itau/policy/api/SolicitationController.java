@@ -57,4 +57,10 @@ public class SolicitationController {
 
     return ResponseEntity.ok(list);
   }
+
+  @DeleteMapping(value = "/{id}")
+  public ResponseEntity<Void> cancel(@PathVariable("id") UUID id) {
+    service.cancel(id);
+    return ResponseEntity.noContent().build();
+  }
 }
