@@ -17,7 +17,7 @@ class SolicitationServiceCancelBranchesTest {
     SolicitationRepository repo = mock(SolicitationRepository.class);
     SolicitationService service = new SolicitationService(repo);
     UUID id = UUID.randomUUID();
-    Solicitation s = Solicitation.builder().id(id).status(Status.APPROVED).build();
+    Solicitation s = Solicitation.builder().id(id).status(Status.APROVADO).build();
 
     when(repo.findWithHistoryById(id)).thenReturn(Optional.of(s));
 
@@ -30,7 +30,7 @@ class SolicitationServiceCancelBranchesTest {
     SolicitationRepository repo = mock(SolicitationRepository.class);
     SolicitationService service = new SolicitationService(repo);
     UUID id = UUID.randomUUID();
-    Solicitation s = Solicitation.builder().id(id).status(Status.REJECTED).build();
+    Solicitation s = Solicitation.builder().id(id).status(Status.REJEITADO).build();
 
     when(repo.findWithHistoryById(id)).thenReturn(Optional.of(s));
 

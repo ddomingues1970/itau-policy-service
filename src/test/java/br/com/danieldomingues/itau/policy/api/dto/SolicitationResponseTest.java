@@ -39,7 +39,7 @@ class SolicitationServiceCoverageTest {
         .paymentMethod("CREDIT_CARD")
         .totalMonthlyPremiumAmount(new BigDecimal("10.00"))
         .insuredAmount(new BigDecimal("1000.00"))
-        .status(Status.RECEIVED)
+        .status(Status.RECEBIDO)
         .createdAt(OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5))
         .build();
   }
@@ -69,7 +69,7 @@ class SolicitationServiceCoverageTest {
 
     assertTrue(out.isPresent());
     // Apenas garante que não estourou LazyInitializationException
-    assertEquals(Status.RECEIVED, out.get().getStatus());
+    assertEquals(Status.RECEBIDO, out.get().getStatus());
     verify(repository).findWithHistoryById(id);
   }
 
@@ -89,7 +89,7 @@ class SolicitationServiceCoverageTest {
     s.setAssistances(assistances);
 
     List<StatusHistory> history = new ArrayList<>();
-    history.add(new StatusHistory(null, Status.RECEIVED, s.getCreatedAt(), s));
+    history.add(new StatusHistory(null, Status.RECEBIDO, s.getCreatedAt(), s));
     s.setHistory(history);
 
     when(repository.findWithHistoryById(id)).thenReturn(Optional.of(s));
@@ -125,7 +125,7 @@ class SolicitationServiceCoverageTest {
     b.setAssistances(assistances);
 
     List<StatusHistory> history = new ArrayList<>();
-    history.add(new StatusHistory(null, Status.RECEIVED, b.getCreatedAt(), b));
+    history.add(new StatusHistory(null, Status.RECEBIDO, b.getCreatedAt(), b));
     b.setHistory(history);
 
     when(repository.findByCustomerId(customer)).thenReturn(List.of(a, b));

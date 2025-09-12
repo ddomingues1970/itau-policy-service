@@ -71,8 +71,8 @@
             "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
             "const body = pm.response.json();",
             "pm.test(\"id bate\", function(){ pm.expect(body.id).to.eql(pm.collectionVariables.get('solicitationId')); });",
-            "pm.test(\"status RECEIVED\", function(){ pm.expect(body.status).to.eql('RECEIVED'); });",
-            "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEIVED'); });"
+            "pm.test(\"status RECEBIDO\", function(){ pm.expect(body.status).to.eql('RECEBIDO'); });",
+            "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); });"
           ]
         }
       }]
@@ -120,9 +120,9 @@
           "exec": [
             "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
             "const body = pm.response.json();",
-            "pm.test(\"status é VALIDATED ou REJECTED\", function () { pm.expect(['VALIDATED','REJECTED']).to.include(body.status); });",
-            "pm.test(\"history encadeado\", function () { pm.expect(body.history.length).to.be.above(1); pm.expect(body.history[0].status).to.eql('RECEIVED'); pm.expect(body.history[body.history.length-1].status).to.eql(body.status); });",
-            "pm.test(\"finishedAt coerente\", function () { if (body.status === 'REJECTED') { pm.expect(body.finishedAt).to.not.eql(null); } else { pm.expect(body.finishedAt).to.eql(null); } });"
+            "pm.test(\"status é VALIDADO ou REJEITADO\", function () { pm.expect(['VALIDADO','REJEITADO']).to.include(body.status); });",
+            "pm.test(\"history encadeado\", function () { pm.expect(body.history.length).to.be.above(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); pm.expect(body.history[body.history.length-1].status).to.eql(body.status); });",
+            "pm.test(\"finishedAt coerente\", function () { if (body.status === 'REJEITADO') { pm.expect(body.finishedAt).to.not.eql(null); } else { pm.expect(body.finishedAt).to.eql(null); } });"
           ]
         }
       }]
@@ -140,14 +140,14 @@
           "type": "text/javascript",
           "exec": [
             "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });",
-            "// após cancelar, o GET deve retornar 200 com status CANCELLED OU 404 dependendo do design;",
-            "// aqui validaremos explicitamente o 200 + CANCELLED, ajustando quando houver mudança de regra.",
+            "// após cancelar, o GET deve retornar 200 com status CANCELADA OU 404 dependendo do design;",
+            "// aqui validaremos explicitamente o 200 + CANCELADA, ajustando quando houver mudança de regra.",
             "pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/solicitations/' + pm.collectionVariables.get('solicitationId'), method: 'GET' }, function (err, res) {",
             "  if (!err && res) {",
             "    pm.test(\"consulta pós-cancelamento\", function(){ pm.expect([200,404]).to.include(res.code); });",
             "    try {",
             "      const b = res.json();",
-            "      if (res.code === 200) { pm.expect(b.status).to.eql('CANCELLED'); }",
+            "      if (res.code === 200) { pm.expect(b.status).to.eql('CANCELADA'); }",
             "    } catch(e) {}",
             "  }",
             "});"

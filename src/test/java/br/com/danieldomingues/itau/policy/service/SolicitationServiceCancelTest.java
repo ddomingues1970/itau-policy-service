@@ -21,9 +21,9 @@ import org.mockito.ArgumentCaptor;
 /**
  * Exercita todos os ramos de cancelamento:
  * - not found -> IllegalArgumentException
- * - status APPROVED/REJECTED -> IllegalStateException
- * - status CANCELLED -> idempotente
- * - status PENDING -> cancela, define finishedAt e adiciona histórico
+ * - status APROVADO/REJEITADO -> IllegalStateException
+ * - status CANCELADA -> idempotente
+ * - status PENDENTE -> cancela, define finishedAt e adiciona histórico
  */
 class SolicitationServiceCancelTest {
 
@@ -65,10 +65,10 @@ class SolicitationServiceCancelTest {
   }
 
   @Test
-  @DisplayName("Não deve cancelar quando status é APPROVED (regra terminal)")
+  @DisplayName("Não deve cancelar quando status é APROVADO (regra terminal)")
   void cancel_approved_forbidden() {
     UUID id = UUID.randomUUID();
-    Solicitation s = newSolicitation(Status.APPROVED);
+    Solicitation s = newSolicitation(Status.APROVADO);
     when(repository.findWithHistoryById(id)).thenReturn(Optional.of(s));
 
     IllegalStateException ex = assertThrows(IllegalStateException.class, () -> service.cancel(id));
@@ -78,10 +78,10 @@ class SolicitationServiceCancelTest {
   }
 
   @Test
-  @DisplayName("Não deve cancelar quando status é REJECTED (regra terminal)")
+  @DisplayName("Não deve cancelar quando status é REJEITADO (regra terminal)")
   void cancel_rejected_forbidden() {
     UUID id = UUID.randomUUID();
-    Solicitation s = newSolicitation(Status.REJECTED);
+    Solicitation s = newSolicitation(Status.REJEITADO);
     when(repository.findWithHistoryById(id)).thenReturn(Optional.of(s));
 
     IllegalStateException ex = assertThrows(IllegalStateException.class, () -> service.cancel(id));
@@ -91,10 +91,10 @@ class SolicitationServiceCancelTest {
   }
 
   @Test
-  @DisplayName("Idempotente: se já estiver CANCELLED, não altera nem salva")
+  @DisplayName("Idempotente: se já estiver CANCELADA, não altera nem salva")
   void cancel_alreadyCancelled_isIdempotent() {
     UUID id = UUID.randomUUID();
-    Solicitation s = newSolicitation(Status.CANCELLED);
+    Solicitation s = newSolicitation(Status.CANCELADA);
     when(repository.findWithHistoryById(id)).thenReturn(Optional.of(s));
 
     assertDoesNotThrow(() -> service.cancel(id));
@@ -103,10 +103,10 @@ class SolicitationServiceCancelTest {
 
   @Test
   @DisplayName(
-      "Cancela com sucesso quando status é PENDING: define finishedAt e adiciona histórico")
+      "Cancela com sucesso quando status é PENDENTE: define finishedAt e adiciona histórico")
   void cancel_fromPending_success() {
     UUID id = UUID.randomUUID();
-    Solicitation s = newSolicitation(Status.PENDING);
+    Solicitation s = newSolicitation(Status.PENDENTE);
     int historyBefore = s.getHistory() == null ? 0 : s.getHistory().size();
     when(repository.findWithHistoryById(id)).thenReturn(Optional.of(s));
     when(repository.save(any(Solicitation.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -114,16 +114,16 @@ class SolicitationServiceCancelTest {
     service.cancel(id);
 
     // Verifica alterações
-    assertEquals(Status.CANCELLED, s.getStatus(), "Status deveria ser CANCELLED");
+    assertEquals(Status.CANCELADA, s.getStatus(), "Status deveria ser CANCELADA");
     assertNotNull(s.getFinishedAt(), "finishedAt deve ser definido no cancelamento");
     assertNotNull(s.getHistory(), "histórico não pode ser nulo");
 
-    // Deve ter adicionado exatamente 1 item de histórico novo (CANCELLED)
+    // Deve ter adicionado exatamente 1 item de histórico novo (CANCELADA)
     assertTrue(s.getHistory().size() >= historyBefore + 1, "Histórico deveria ter aumentado");
 
     // Garante que salvou a entidade alterada
     ArgumentCaptor<Solicitation> captor = ArgumentCaptor.forClass(Solicitation.class);
     verify(repository).save(captor.capture());
-    assertEquals(Status.CANCELLED, captor.getValue().getStatus());
+    assertEquals(Status.CANCELADA, captor.getValue().getStatus());
   }
 }

@@ -48,9 +48,9 @@ class FraudValidationServiceRulesTest {
             BigDecimal.valueOf(insuredAmount),
             Collections.emptyMap(),
             Collections.emptyList());
-    // Forçamos status RECEIVED (normalmente @PrePersist cuida)
+    // Forçamos status RECEBIDO (normalmente @PrePersist cuida)
     s.setId(UUID.randomUUID());
-    s.setStatus(Status.RECEIVED);
+    s.setStatus(Status.RECEBIDO);
     return s;
   }
 
@@ -66,7 +66,7 @@ class FraudValidationServiceRulesTest {
     ArgumentCaptor<Solicitation> captor = ArgumentCaptor.forClass(Solicitation.class);
     verify(repository).save(captor.capture());
 
-    assertThat(captor.getValue().getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(captor.getValue().getStatus()).isEqualTo(Status.VALIDADO);
   }
 
   @Test
@@ -81,7 +81,7 @@ class FraudValidationServiceRulesTest {
     ArgumentCaptor<Solicitation> captor = ArgumentCaptor.forClass(Solicitation.class);
     verify(repository).save(captor.capture());
 
-    assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJEITADO);
   }
 
   @Test
@@ -96,7 +96,7 @@ class FraudValidationServiceRulesTest {
     ArgumentCaptor<Solicitation> captor = ArgumentCaptor.forClass(Solicitation.class);
     verify(repository).save(captor.capture());
 
-    assertThat(captor.getValue().getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(captor.getValue().getStatus()).isEqualTo(Status.VALIDADO);
   }
 
   @Test
@@ -111,7 +111,7 @@ class FraudValidationServiceRulesTest {
     ArgumentCaptor<Solicitation> captor = ArgumentCaptor.forClass(Solicitation.class);
     verify(repository).save(captor.capture());
 
-    assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJEITADO);
   }
 
   @Test
@@ -126,25 +126,25 @@ class FraudValidationServiceRulesTest {
     ArgumentCaptor<Solicitation> captor = ArgumentCaptor.forClass(Solicitation.class);
     verify(repository).save(captor.capture());
 
-    assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(captor.getValue().getStatus()).isEqualTo(Status.REJEITADO);
   }
 
   @Test
   void alreadyValidated_shouldNotChangeStatus() {
     Solicitation sol = newSolicitation(Category.AUTO, 100_000);
-    sol.setStatus(Status.VALIDATED);
+    sol.setStatus(Status.VALIDADO);
     when(repository.findById(sol.getId())).thenReturn(Optional.of(sol));
 
     Solicitation result = service.validate(sol.getId());
 
     verify(repository, never()).save(any());
-    assertThat(result.getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(result.getStatus()).isEqualTo(Status.VALIDADO);
   }
 
   @Test
   void invalidState_shouldThrowException() {
     Solicitation sol = newSolicitation(Category.AUTO, 100_000);
-    sol.setStatus(Status.PENDING);
+    sol.setStatus(Status.PENDENTE);
     when(repository.findById(sol.getId())).thenReturn(Optional.of(sol));
 
     assertThatThrownBy(() -> service.validate(sol.getId()))
@@ -162,7 +162,7 @@ class FraudValidationServiceRulesTest {
     service.validate(sol.getId());
 
     verify(repository).save(any(Solicitation.class));
-    assertThat(sol.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(sol.getStatus()).isEqualTo(Status.REJEITADO);
   }
 
   @Test
@@ -176,20 +176,20 @@ class FraudValidationServiceRulesTest {
     service.validate(sol.getId());
 
     verify(repository).save(any(Solicitation.class));
-    assertThat(sol.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(sol.getStatus()).isEqualTo(Status.REJEITADO);
   }
 
   @Test
   void classificationWithSpacesAndLowercase_shouldBeTrimmedUppercasedAndValidate() {
     Solicitation sol = newSolicitation(Category.LIFE, 250_000);
     when(repository.findById(sol.getId())).thenReturn(Optional.of(sol));
-    // " regular " -> REGULAR -> VALIDATED (trim + uppercase)
+    // " regular " -> REGULAR -> VALIDADO (trim + uppercase)
     when(fraudClient.check(any(FraudCheckRequest.class)))
         .thenReturn(FraudCheckResponse.builder().classification("  regular  ").build());
 
     service.validate(sol.getId());
 
     verify(repository).save(any(Solicitation.class));
-    assertThat(sol.getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(sol.getStatus()).isEqualTo(Status.VALIDADO);
   }
 }

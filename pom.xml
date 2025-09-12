@@ -18,9 +18,11 @@
         <jacoco.version>0.8.12</jacoco.version>
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <maven.failsafe.version>3.2.5</maven.failsafe.version>
-        <!-- Encodings explícitos -->
+        <!-- Encodings -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- Por padrão, pular ITs; para rodá-los use: -DskipITs=false -->
+        <skipITs>true</skipITs>
     </properties>
 
     <dependencyManagement>
@@ -70,6 +72,12 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Tracing (Micrometer + Brave) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+
         <!-- Optional -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -115,6 +123,11 @@
                 <configuration>
                     <mainClass>br.com.danieldomingues.itau.policy.PolicyServiceApplication</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals><goal>repackage</goal></goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Compiler -->
@@ -130,7 +143,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Resources (garante UTF-8 em cópia de recursos) -->
+            <!-- Resources -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -183,7 +196,6 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
-                    <!-- UT agent -->
                     <execution>
                         <id>prepare-agent-ut</id>
                         <phase>initialize</phase>
@@ -193,8 +205,6 @@
                             <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
                         </configuration>
                     </execution>
-
-                    <!-- IT agent -->
                     <execution>
                         <id>prepare-agent-it</id>
                         <phase>pre-integration-test</phase>
@@ -204,8 +214,6 @@
                             <destFile>${project.build.directory}/jacoco-it.exec</destFile>
                         </configuration>
                     </execution>
-
-                    <!-- Report (single module) -->
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
@@ -224,8 +232,6 @@
                             </excludes>
                         </configuration>
                     </execution>
-
-                    <!-- Coverage gate -->
                     <execution>
                         <id>check</id>
                         <phase>verify</phase>
@@ -273,8 +279,8 @@
                     <excludes>
                         <exclude>**/*IT.java</exclude>
                     </excludes>
-                    <!-- Suprime avisos do JDK 21 nos testes -->
-                    <argLine>${jacoco.ut.argLine} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
+                    <!-- Late replacement para o Jacoco -->
+                    <argLine>@{jacoco.ut.argLine} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
                     <useSystemClassLoader>true</useSystemClassLoader>
                 </configuration>
             </plugin>
@@ -288,8 +294,10 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
-                    <!-- Suprime avisos do JDK 21 nos testes de integração -->
-                    <argLine>${jacoco.it.argLine} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
+                    <!-- pular ITs por padrão; rode com -DskipITs=false para executá-los -->
+                    <skipITs>${skipITs}</skipITs>
+                    <!-- Late replacement para o Jacoco IT -->
+                    <argLine>@{jacoco.it.argLine} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
                 </configuration>
                 <executions>
                     <execution>

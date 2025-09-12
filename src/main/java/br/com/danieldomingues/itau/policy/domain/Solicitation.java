@@ -89,15 +89,15 @@ public class Solicitation {
       createdAt = OffsetDateTime.now();
     }
     if (status == null) {
-      status = Status.RECEIVED;
+      status = Status.RECEBIDO;
     }
     if (history == null) {
       history = new ArrayList<>();
     }
-    // registra RECEIVED no histórico se ainda não houver
-    boolean hasReceived = history.stream().anyMatch(h -> h.getStatus() == Status.RECEIVED);
+    // registra RECEBIDO no histórico se ainda não houver
+    boolean hasReceived = history.stream().anyMatch(h -> h.getStatus() == Status.RECEBIDO);
     if (!hasReceived) {
-      addHistory(Status.RECEIVED, createdAt != null ? createdAt : OffsetDateTime.now());
+      addHistory(Status.RECEBIDO, createdAt != null ? createdAt : OffsetDateTime.now());
     }
   }
 }

@@ -31,8 +31,8 @@ public class SolicitationService {
     if (entity.getCreatedAt() == null) {
       entity.setCreatedAt(now);
     }
-    entity.setStatus(Status.RECEIVED);
-    entity.addHistory(Status.RECEIVED, now);
+    entity.setStatus(Status.RECEBIDO);
+    entity.addHistory(Status.RECEBIDO, now);
 
     return repository.save(entity);
   }
@@ -72,8 +72,8 @@ public class SolicitationService {
 
   /**
    * Cancela a solicitação com regras:
-   * - Não permite cancelar APPROVED/REJECTED (terminais) -> IllegalStateException (400).
-   * - Idempotente para CANCELLED.
+   * - Não permite cancelar APROVADO/REJEITADO (terminais) -> IllegalStateException (400).
+   * - Idempotente para CANCELADA.
    * - Ao cancelar, define finishedAt e registra histórico.
    * - Se não existir -> IllegalArgumentException (404 pelo ApiExceptionHandler).
    */
@@ -86,18 +86,18 @@ public class SolicitationService {
             .orElseThrow(() -> new IllegalArgumentException("Solicitation not found: " + id));
 
     Status current = s.getStatus();
-    if (current == Status.APPROVED || current == Status.REJECTED) {
+    if (current == Status.APROVADO || current == Status.REJEITADO) {
       throw new IllegalStateException(
           "Cannot cancel a solicitation with terminal status: " + current);
     }
-    if (current == Status.CANCELLED) {
+    if (current == Status.CANCELADA) {
       return; // Idempotente
     }
 
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    s.setStatus(Status.CANCELLED);
+    s.setStatus(Status.CANCELADA);
     s.setFinishedAt(now);
-    s.addHistory(Status.CANCELLED, now);
+    s.addHistory(Status.CANCELADA, now);
 
     repository.save(s);
   }

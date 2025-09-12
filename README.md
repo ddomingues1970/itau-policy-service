@@ -42,9 +42,9 @@ docker compose up -d --build
 - **POST** `/solicitations/{id}/validate` — valida fraude (WireMock)
 - **DELETE** `/solicitations/{id}` — **cancela** a solicitação  
   Regras:
-  - `APPROVED`/`REJECTED` → **400** (terminal)
+  - `APROVADO`/`REJEITADO` → **400** (terminal)
   - inexistente → **404**
-  - idempotente em `CANCELLED` → **204**
+  - idempotente em `CANCELADO` → **204**
 
 ## Observabilidade
 - Actuator expõe: `/actuator/health`, `/actuator/info`, `/actuator/metrics`
@@ -52,6 +52,19 @@ docker compose up -d --build
   ```
   ts=2025-09-11T18:20:01-03:00 level=INFO logger=b.c.d.i.p... thread=main msg="Started ..."
   ```
+- **Tracing (Micrometer Tracing + Brave/Zipkin)**
+  - Dependência: `io.micrometer:micrometer-tracing-bridge-brave`
+  - Exportador Zipkin: `io.zipkin.reporter2:zipkin-reporter-brave`
+  - Ativar no `application.yml`:
+    ```yaml
+    management.tracing.sampling.probability: 1.0
+    management.zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans
+    ```
+  - Subir Zipkin com Docker:
+    ```bash
+    docker run -d -p 9411:9411 openzipkin/zipkin
+    ```
+  - Consultar traces: [http://localhost:9411](http://localhost:9411)
 
 ## Testes & cobertura
 ```bash

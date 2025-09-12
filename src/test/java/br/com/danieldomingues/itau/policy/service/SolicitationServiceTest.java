@@ -62,17 +62,17 @@ class SolicitationServiceTest {
   }
 
   @Test
-  @DisplayName("Deve criar e persistir uma solicitação com status RECEIVED e histórico inicial")
+  @DisplayName("Deve criar e persistir uma solicitação com status RECEBIDO e histórico inicial")
   void shouldCreateSolicitation() {
     Solicitation saved = service.create(req);
 
     assertThat(saved.getId()).isNotNull();
     assertThat(saved.getCreatedAt()).isNotNull();
-    assertThat(saved.getStatus().name()).isEqualTo("RECEIVED");
+    assertThat(saved.getStatus().name()).isEqualTo("RECEBIDO");
 
     // Recarrega do repositório para garantir cascade/history
     var fromDb = repo.findById(saved.getId()).orElseThrow();
     assertThat(fromDb.getHistory()).hasSize(1);
-    assertThat(fromDb.getHistory().get(0).getStatus().name()).isEqualTo("RECEIVED");
+    assertThat(fromDb.getHistory().get(0).getStatus().name()).isEqualTo("RECEBIDO");
   }
 }

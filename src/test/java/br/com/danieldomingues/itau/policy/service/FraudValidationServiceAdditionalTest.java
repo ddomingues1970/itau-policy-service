@@ -51,8 +51,8 @@ class FraudValidationServiceAdditionalTest {
             Collections.emptyList());
     // simulamos o estado inicial esperado pelo domínio (@PrePersist faria isso no runtime)
     s.setId(UUID.randomUUID());
-    s.setStatus(Status.RECEIVED);
-    s.addHistory(Status.RECEIVED, OffsetDateTime.now());
+    s.setStatus(Status.RECEBIDO);
+    s.addHistory(Status.RECEBIDO, OffsetDateTime.now());
     return s;
   }
 
@@ -72,7 +72,7 @@ class FraudValidationServiceAdditionalTest {
   @Test
   void alreadyRejected_shouldBeIdempotent_andNotCallFraudOrSave() {
     Solicitation s = newSolicitation(Category.AUTO, 100_000);
-    s.setStatus(Status.REJECTED);
+    s.setStatus(Status.REJEITADO);
     s.setFinishedAt(OffsetDateTime.now());
 
     when(repository.findById(s.getId())).thenReturn(Optional.of(s));
@@ -83,7 +83,7 @@ class FraudValidationServiceAdditionalTest {
     verify(fraudClient, never()).check(any());
     verify(repository, never()).save(any());
 
-    assertThat(out.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(out.getStatus()).isEqualTo(Status.REJEITADO);
     assertThat(out.getFinishedAt()).isNotNull();
   }
 
@@ -97,22 +97,22 @@ class FraudValidationServiceAdditionalTest {
 
     Solicitation saved = newSolicitation(Category.HOME, 200_000);
     saved.setId(s.getId()); // simula retorno do save com o mesmo id
-    saved.setStatus(Status.REJECTED);
+    saved.setStatus(Status.REJEITADO);
     saved.setFinishedAt(OffsetDateTime.now());
-    // histórico já continha RECEIVED; adiciona REJECTED
-    saved.addHistory(Status.REJECTED, saved.getFinishedAt());
+    // histórico já continha RECEBIDO; adiciona REJEITADO
+    saved.addHistory(Status.REJEITADO, saved.getFinishedAt());
 
     when(repository.save(any(Solicitation.class))).thenReturn(saved);
 
     Solicitation result = service.validate(s.getId());
 
-    assertThat(result.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(result.getStatus()).isEqualTo(Status.REJEITADO);
     assertThat(result.getFinishedAt()).isNotNull();
-    // deve ter pelo menos RECEIVED + REJECTED
+    // deve ter pelo menos RECEBIDO + REJEITADO
     assertThat(result.getHistory().size()).isGreaterThanOrEqualTo(2);
-    assertThat(result.getHistory().get(0).getStatus()).isEqualTo(Status.RECEIVED);
+    assertThat(result.getHistory().get(0).getStatus()).isEqualTo(Status.RECEBIDO);
     assertThat(result.getHistory().get(result.getHistory().size() - 1).getStatus())
-        .isEqualTo(Status.REJECTED);
+        .isEqualTo(Status.REJEITADO);
   }
 
   @Test

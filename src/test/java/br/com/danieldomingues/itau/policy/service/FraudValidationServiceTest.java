@@ -51,10 +51,10 @@ class FraudValidationServiceTest {
             .totalMonthlyPremiumAmount(new BigDecimal("75.25"))
             .insuredAmount(new BigDecimal("275000.50"))
             .build();
-    // simulamos estado RECEIVED (como após @PrePersist)
-    s.setStatus(Status.RECEIVED);
+    // simulamos estado RECEBIDO (como após @PrePersist)
+    s.setStatus(Status.RECEBIDO);
     s.setCreatedAt(OffsetDateTime.now());
-    s.addHistory(Status.RECEIVED, s.getCreatedAt());
+    s.addHistory(Status.RECEBIDO, s.getCreatedAt());
     return s;
   }
 
@@ -71,7 +71,7 @@ class FraudValidationServiceTest {
   // ---- tests
 
   @Test
-  @DisplayName("REGULAR -> VALIDATED (mantém finishedAt nulo e adiciona histórico)")
+  @DisplayName("REGULAR -> VALIDADO (mantém finishedAt nulo e adiciona histórico)")
   void validate_regular() {
     Solicitation s = newReceivedSolicitation();
     mockFound(s);
@@ -83,15 +83,15 @@ class FraudValidationServiceTest {
 
     Solicitation result = service.validate(SOLICITATION_ID);
 
-    assertThat(result.getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(result.getStatus()).isEqualTo(Status.VALIDADO);
     assertThat(result.getFinishedAt()).isNull();
     assertThat(result.getHistory())
         .extracting(h -> h.getStatus())
-        .containsExactly(Status.RECEIVED, Status.VALIDATED);
+        .containsExactly(Status.RECEBIDO, Status.VALIDADO);
   }
 
   @Test
-  @DisplayName("PREFERENTIAL -> VALIDATED")
+  @DisplayName("PREFERENTIAL -> VALIDADO")
   void validate_preferential() {
     Solicitation s = newReceivedSolicitation();
     mockFound(s);
@@ -103,12 +103,12 @@ class FraudValidationServiceTest {
 
     Solicitation result = service.validate(SOLICITATION_ID);
 
-    assertThat(result.getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(result.getStatus()).isEqualTo(Status.VALIDADO);
     assertThat(result.getFinishedAt()).isNull();
   }
 
   @Test
-  @DisplayName("HIGH_RISK -> REJECTED (finaliza e adiciona histórico)")
+  @DisplayName("HIGH_RISK -> REJEITADO (finaliza e adiciona histórico)")
   void validate_highRisk() {
     Solicitation s = newReceivedSolicitation();
     mockFound(s);
@@ -120,15 +120,15 @@ class FraudValidationServiceTest {
 
     Solicitation result = service.validate(SOLICITATION_ID);
 
-    assertThat(result.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(result.getStatus()).isEqualTo(Status.REJEITADO);
     assertThat(result.getFinishedAt()).isNotNull();
     assertThat(result.getHistory())
         .extracting(h -> h.getStatus())
-        .containsExactly(Status.RECEIVED, Status.REJECTED);
+        .containsExactly(Status.RECEBIDO, Status.REJEITADO);
   }
 
   @Test
-  @DisplayName("NO_INFO (ou classificação nula) -> REJECTED")
+  @DisplayName("NO_INFO (ou classificação nula) -> REJEITADO")
   void validate_noInfo() {
     Solicitation s = newReceivedSolicitation();
     mockFound(s);
@@ -140,12 +140,12 @@ class FraudValidationServiceTest {
 
     Solicitation result = service.validate(SOLICITATION_ID);
 
-    assertThat(result.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(result.getStatus()).isEqualTo(Status.REJEITADO);
     assertThat(result.getFinishedAt()).isNotNull();
   }
 
   @Test
-  @DisplayName("Classificação desconhecida -> REJECTED (fallback)")
+  @DisplayName("Classificação desconhecida -> REJEITADO (fallback)")
   void validate_unknownClassification() {
     Solicitation s = newReceivedSolicitation();
     mockFound(s);
@@ -157,29 +157,29 @@ class FraudValidationServiceTest {
 
     Solicitation result = service.validate(SOLICITATION_ID);
 
-    assertThat(result.getStatus()).isEqualTo(Status.REJECTED);
+    assertThat(result.getStatus()).isEqualTo(Status.REJEITADO);
     assertThat(result.getFinishedAt()).isNotNull();
   }
 
   @Test
-  @DisplayName("Idempotência: já VALIDATED -> não chama FraudClient")
+  @DisplayName("Idempotência: já VALIDADO -> não chama FraudClient")
   void validate_alreadyValidated() {
     Solicitation s = newReceivedSolicitation();
-    s.setStatus(Status.VALIDATED);
+    s.setStatus(Status.VALIDADO);
     mockFound(s);
     // não stubbar save: método retorna antes
 
     Solicitation result = service.validate(SOLICITATION_ID);
 
-    assertThat(result.getStatus()).isEqualTo(Status.VALIDATED);
+    assertThat(result.getStatus()).isEqualTo(Status.VALIDADO);
     verify(fraudClient, never()).check(ArgumentMatchers.any());
   }
 
   @Test
-  @DisplayName("Estado inválido (!= RECEIVED) e não terminal -> erro")
+  @DisplayName("Estado inválido (!= RECEBIDO) e não terminal -> erro")
   void validate_invalidState() {
     Solicitation s = newReceivedSolicitation();
-    s.setStatus(Status.PENDING); // estado inválido para validação
+    s.setStatus(Status.PENDENTE); // estado inválido para validação
     mockFound(s);
     // não stubbar save: exceção antes
 
