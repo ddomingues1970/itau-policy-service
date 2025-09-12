@@ -19,6 +19,10 @@
         <jacoco.version>0.8.12</jacoco.version>
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <maven.failsafe.version>3.2.5</maven.failsafe.version>
+
+        <!-- Encodings explícitos -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencyManagement>
@@ -124,6 +128,17 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <release>${java.version}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Resources -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
 
@@ -199,9 +214,6 @@
                         <goals><goal>report</goal></goals>
                         <configuration>
                             <dataFile>${project.build.directory}/jacoco-ut.exec</dataFile>
-                            <dataFiles>
-                                <dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
-                            </dataFiles>
                             <excludes>
                                 <exclude>**/PolicyServiceApplication.*</exclude>
                                 <exclude>**/api/dto/**</exclude>
