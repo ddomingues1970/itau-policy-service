@@ -20,6 +20,9 @@ spring:
     port: 5672
     username: guest
     password: guest
+    listener:
+      simple:
+        auto-startup: false
 
 fraud:
   api:
@@ -48,3 +51,18 @@ logging:
     console: >-
       ts=%d{ISO_OFFSET_DATE_TIME} level=%p logger=%logger{36} thread=%thread msg="%m"
       traceId=%X{traceId:-} spanId=%X{spanId:-}%n
+
+amqp:
+  exchanges:
+    policy: policy.exchange
+  queues:
+    payment: policy.payment.q
+    subscription: policy.subscription.q
+    events:
+      approved: policy.approved.q
+      rejected: policy.rejected.q
+  routing:
+    payment: policy.payment
+    subscription: policy.subscription
+    approved: policy.approved
+    rejected: policy.rejected

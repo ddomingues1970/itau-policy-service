@@ -101,3 +101,32 @@ Variáveis: `baseUrl`, `solicitationId`, `customerId`, `productId`.
 - **RabbitMQ indisponível**: confira `docker compose ps` e credenciais.
 - **DB schema**: em `dev/test`, `ddl-auto=update`; em produção use migrações (Flyway/Liquibase).
 - **Coverage ausente**: certifique-se do POM com `prepare-agent` (UT/IT) e execute `mvn clean verify`.
+
+
+## Build & Deploy da aplicação (Docker)
+
+```bash
+# Compilar e empacotar
+mvn clean package -DskipTests
+
+# Subir apenas a aplicação (sem reiniciar dependências)
+docker compose up -d --no-deps --force-recreate policy-service
+```
+
+## Testes com Postman
+
+Arquivo de coleção: `itau-policy-service.postman_collection.json` (na raiz).
+
+Fluxo ponta a ponta:
+1. **Criar solicitação** (`POST /solicitations`)
+2. **Consultar solicitação** por ID
+3. **Validar fraude** (WireMock — `POST /fraud/check`)
+4. **Processar eventos** de pagamento e subscrição (RabbitMQ)
+5. **Consultar status final** (APROVADO / REJEITADO / CANCELADO)
+
+### Variáveis úteis na collection
+- `api_base` (http://localhost:8080)
+- `rabbit_base` (http://localhost:15672)
+- `exchange` (`policy.exchange`)
+- `solicitationId`, `customerId`, `productId`
+

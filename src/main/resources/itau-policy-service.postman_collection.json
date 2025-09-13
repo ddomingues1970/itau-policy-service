@@ -5,155 +5,497 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "customerId", "value": "adc56d77-348c-4bf0-908f-22d402ee715c" },
-    { "key": "productId", "value": "1b2da7cc-b367-4196-8a78-9cfeec21f587" },
-    { "key": "solicitationId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "customerId",
+      "value": "adc56d77-348c-4bf0-908f-22d402ee715c"
+    },
+    {
+      "key": "productId",
+      "value": "1b2da7cc-b367-4196-8a78-9cfeec21f587"
+    },
+    {
+      "key": "solicitationId",
+      "value": "REPLACE-ME-WITH-SOLICITATION-UUID"
+    },
+    {
+      "key": "api_base",
+      "value": "http://localhost:8080",
+      "type": "default"
+    },
+    {
+      "key": "rabbit_base",
+      "value": "http://localhost:15672",
+      "type": "default"
+    },
+    {
+      "key": "rabbit_vhost_enc",
+      "value": "%2F",
+      "type": "default"
+    },
+    {
+      "key": "rabbit_user",
+      "value": "guest",
+      "type": "default"
+    },
+    {
+      "key": "rabbit_pass",
+      "value": "guest",
+      "type": "default"
+    },
+    {
+      "key": "exchange",
+      "value": "policy.exchange",
+      "type": "default"
+    },
+    {
+      "key": "rk_payment",
+      "value": "policy.payment",
+      "type": "default"
+    },
+    {
+      "key": "rk_subscription",
+      "value": "policy.subscription",
+      "type": "default"
+    },
+    {
+      "key": "rk_approved",
+      "value": "policy.approved",
+      "type": "default"
+    },
+    {
+      "key": "rk_rejected",
+      "value": "policy.rejected",
+      "type": "default"
+    }
   ],
   "item": [
     {
       "name": "Actuator Health",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] }
-      },
-      "response": [],
-      "event": [{
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-            "try { const body = pm.response.json(); pm.test(\"UP\", function () { pm.expect(body.status).to.eql('UP'); }); } catch(e) {}"
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "actuator",
+            "health"
           ]
         }
-      }]
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "try { const body = pm.response.json(); pm.test(\"UP\", function () { pm.expect(body.status).to.eql('UP'); }); } catch(e) {}"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Criar Solicitação",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"productId\": \"{{productId}}\",\n  \"category\": \"AUTO\",\n  \"salesChannel\": \"MOBILE\",\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"totalMonthlyPremiumAmount\": 75.25,\n  \"insuredAmount\": 275000.50,\n  \"coverages\": {\n    \"Roubo\": 100000.25,\n    \"Perda Total\": 100000.25,\n    \"Colisao com Terceiros\": 75000.00\n  },\n  \"assistances\": [\n    \"Guincho até 250km\",\n    \"Troca de Óleo\",\n    \"Chaveiro 24h\"\n  ]\n}\n"
         },
-        "url": { "raw": "{{baseUrl}}/solicitations", "host": ["{{baseUrl}}"], "path": ["solicitations"] }
-      },
-      "response": [],
-      "event": [{
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test(\"status 201\", function () { pm.response.to.have.status(201); });",
-            "const body = pm.response.json();",
-            "pm.test(\"tem id\", function(){ pm.expect(body.id).to.be.a('string').and.not.empty; });",
-            "pm.collectionVariables.set('solicitationId', body.id);",
-            "try { const reqBody = JSON.parse(pm.request.body.raw); if (reqBody.customerId) pm.collectionVariables.set('customerId', reqBody.customerId); } catch(e) {}"
+        "url": {
+          "raw": "{{baseUrl}}/solicitations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "solicitations"
           ]
         }
-      }]
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 201\", function () { pm.response.to.have.status(201); });",
+              "const body = pm.response.json();",
+              "pm.test(\"tem id\", function(){ pm.expect(body.id).to.be.a('string').and.not.empty; });",
+              "pm.collectionVariables.set('solicitationId', body.id);",
+              "try { const reqBody = JSON.parse(pm.request.body.raw); if (reqBody.customerId) pm.collectionVariables.set('customerId', reqBody.customerId); } catch(e) {}"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Consultar Solicitação",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
-        "url": { "raw": "{{baseUrl}}/solicitations/{{solicitationId}}", "host": ["{{baseUrl}}"], "path": ["solicitations","{{solicitationId}}"] }
-      },
-      "response": [],
-      "event": [{
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-            "const body = pm.response.json();",
-            "pm.test(\"id bate\", function(){ pm.expect(body.id).to.eql(pm.collectionVariables.get('solicitationId')); });",
-            "pm.test(\"status RECEBIDO\", function(){ pm.expect(body.status).to.eql('RECEBIDO'); });",
-            "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); });"
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "solicitations",
+            "{{solicitationId}}"
           ]
         }
-      }]
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test(\"id bate\", function(){ pm.expect(body.id).to.eql(pm.collectionVariables.get('solicitationId')); });",
+              "pm.test(\"status RECEBIDO\", function(){ pm.expect(body.status).to.eql('RECEBIDO'); });",
+              "pm.test(\"history inicial\", function(){ pm.expect(body.history.length).to.be.at.least(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); });"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Consultar Solicitação por cliente",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/solicitations?customerId={{customerId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["solicitations"],
-          "query": [{ "key": "customerId", "value": "{{customerId}}" }]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "solicitations"
+          ],
+          "query": [
+            {
+              "key": "customerId",
+              "value": "{{customerId}}"
+            }
+          ]
         }
       },
       "response": [],
-      "event": [{
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-            "const arr = pm.response.json();",
-            "pm.test(\"lista contém a recém-criada\", function(){",
-            "  const id = pm.collectionVariables.get('solicitationId');",
-            "  pm.expect(arr.some(x => x.id === id)).to.eql(true);",
-            "});"
-          ]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "const arr = pm.response.json();",
+              "pm.test(\"lista contém a recém-criada\", function(){",
+              "  const id = pm.collectionVariables.get('solicitationId');",
+              "  pm.expect(arr.some(x => x.id === id)).to.eql(true);",
+              "});"
+            ]
+          }
         }
-      }]
+      ]
     },
     {
       "name": "Validar Solicitação (Fraud Check)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
-        "url": { "raw": "{{baseUrl}}/solicitations/{{solicitationId}}/validate", "host": ["{{baseUrl}}"], "path": ["solicitations","{{solicitationId}}","validate"] }
-      },
-      "response": [],
-      "event": [{
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
-            "const body = pm.response.json();",
-            "pm.test(\"status é VALIDADO ou REJEITADO\", function () { pm.expect(['VALIDADO','REJEITADO']).to.include(body.status); });",
-            "pm.test(\"history encadeado\", function () { pm.expect(body.history.length).to.be.above(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); pm.expect(body.history[body.history.length-1].status).to.eql(body.status); });",
-            "pm.test(\"finishedAt coerente\", function () { if (body.status === 'REJEITADO') { pm.expect(body.finishedAt).to.not.eql(null); } else { pm.expect(body.finishedAt).to.eql(null); } });"
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}/validate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "solicitations",
+            "{{solicitationId}}",
+            "validate"
           ]
         }
-      }]
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test(\"status é VALIDADO ou REJEITADO\", function () { pm.expect(['VALIDADO','REJEITADO']).to.include(body.status); });",
+              "pm.test(\"history encadeado\", function () { pm.expect(body.history.length).to.be.above(1); pm.expect(body.history[0].status).to.eql('RECEBIDO'); pm.expect(body.history[body.history.length-1].status).to.eql(body.status); });",
+              "pm.test(\"finishedAt coerente\", function () { if (body.status === 'REJEITADO') { pm.expect(body.finishedAt).to.not.eql(null); } else { pm.expect(body.finishedAt).to.eql(null); } });"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Cancelar Solicitação",
       "request": {
         "method": "DELETE",
-        "url": { "raw": "{{baseUrl}}/solicitations/{{solicitationId}}", "host": ["{{baseUrl}}"], "path": ["solicitations","{{solicitationId}}"] }
-      },
-      "response": [],
-      "event": [{
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });",
-            "// após cancelar, o GET deve retornar 200 com status CANCELADA OU 404 dependendo do design;",
-            "// aqui validaremos explicitamente o 200 + CANCELADA, ajustando quando houver mudança de regra.",
-            "pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/solicitations/' + pm.collectionVariables.get('solicitationId'), method: 'GET' }, function (err, res) {",
-            "  if (!err && res) {",
-            "    pm.test(\"consulta pós-cancelamento\", function(){ pm.expect([200,404]).to.include(res.code); });",
-            "    try {",
-            "      const b = res.json();",
-            "      if (res.code === 200) { pm.expect(b.status).to.eql('CANCELADA'); }",
-            "    } catch(e) {}",
-            "  }",
-            "});"
+        "url": {
+          "raw": "{{baseUrl}}/solicitations/{{solicitationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "solicitations",
+            "{{solicitationId}}"
           ]
         }
-      }]
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });",
+              "// após cancelar, o GET deve retornar 200 com status CANCELADA OU 404 dependendo do design;",
+              "// aqui validaremos explicitamente o 200 + CANCELADA, ajustando quando houver mudança de regra.",
+              "pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/solicitations/' + pm.collectionVariables.get('solicitationId'), method: 'GET' }, function (err, res) {",
+              "  if (!err && res) {",
+              "    pm.test(\"consulta pós-cancelamento\", function(){ pm.expect([200,404]).to.include(res.code); });",
+              "    try {",
+              "      const b = res.json();",
+              "      if (res.code === 200) { pm.expect(b.status).to.eql('CANCELADA'); }",
+              "    } catch(e) {}",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events (RabbitMQ)",
+      "description": "Mensageria via RabbitMQ Management HTTP API. Publica mensagens na exchange {{exchange}} com as routing keys definidas.\nObservação: autenticação básica com {{rabbit_user}}/{{rabbit_pass}}.",
+      "item": [
+        {
+          "name": "Payment → Approved",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{rabbit_base}}/api/exchanges/{{rabbit_vhost_enc}}/{{exchange}}/publish",
+              "host": [
+                "{{rabbit_base}}"
+              ],
+              "path": [
+                "api",
+                "exchanges",
+                "{{rabbit_vhost_enc}}",
+                "{{exchange}}",
+                "publish"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbit_user}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbit_pass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"properties\":{},\"routing_key\":\"{{rk_payment}}\",\"payload\":\"{\\\"solicitationId\\\": \\\"{{solicitationId}}\\\", \\\"approved\\\": true}\",\"payload_encoding\":\"string\"}"
+            },
+            "description": "Publica na exchange {exchange} com routing key {{rk_payment}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Payment → Rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{rabbit_base}}/api/exchanges/{{rabbit_vhost_enc}}/{{exchange}}/publish",
+              "host": [
+                "{{rabbit_base}}"
+              ],
+              "path": [
+                "api",
+                "exchanges",
+                "{{rabbit_vhost_enc}}",
+                "{{exchange}}",
+                "publish"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbit_user}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbit_pass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"properties\":{},\"routing_key\":\"{{rk_payment}}\",\"payload\":\"{\\\"solicitationId\\\": \\\"{{solicitationId}}\\\", \\\"approved\\\": false}\",\"payload_encoding\":\"string\"}"
+            },
+            "description": "Publica na exchange {exchange} com routing key {{rk_payment}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Subscription → Active",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{rabbit_base}}/api/exchanges/{{rabbit_vhost_enc}}/{{exchange}}/publish",
+              "host": [
+                "{{rabbit_base}}"
+              ],
+              "path": [
+                "api",
+                "exchanges",
+                "{{rabbit_vhost_enc}}",
+                "{{exchange}}",
+                "publish"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbit_user}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbit_pass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"properties\":{},\"routing_key\":\"{{rk_subscription}}\",\"payload\":\"{\\\"solicitationId\\\": \\\"{{solicitationId}}\\\", \\\"active\\\": true}\",\"payload_encoding\":\"string\"}"
+            },
+            "description": "Publica na exchange {exchange} com routing key {{rk_subscription}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Subscription → Rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{rabbit_base}}/api/exchanges/{{rabbit_vhost_enc}}/{{exchange}}/publish",
+              "host": [
+                "{{rabbit_base}}"
+              ],
+              "path": [
+                "api",
+                "exchanges",
+                "{{rabbit_vhost_enc}}",
+                "{{exchange}}",
+                "publish"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbit_user}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbit_pass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"properties\":{},\"routing_key\":\"{{rk_subscription}}\",\"payload\":\"{\\\"solicitationId\\\": \\\"{{solicitationId}}\\\", \\\"active\\\": false}\",\"payload_encoding\":\"string\"}"
+            },
+            "description": "Publica na exchange {exchange} com routing key {{rk_subscription}}."
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
